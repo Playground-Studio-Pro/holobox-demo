@@ -40,85 +40,78 @@ function FashionControlBtn({ label, active, onPress }) {
   )
 }
 
-/* ── Branded product-entry transition — transparent, never replaces physical stage ── */
-function ProductEntryTransition({ product, brand, onComplete }) {
+/* ── Branded product-entry curtain — opaque, temporary, fully removed after animation ── */
+function ProductEntryCurtain({ product, brand, onComplete }) {
   const isRunner = product.id === 'runner'
-  const duration = isRunner ? 1500 : 2200
+  const duration = isRunner ? 1300 : 1900
 
   useEffect(() => {
     const t = setTimeout(onComplete, duration)
     return () => clearTimeout(t)
   }, [duration, onComplete])
 
+  if (isRunner) {
+    return (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 50, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: '#f2ede7',
+          animation: `curtainRunner ${duration}ms cubic-bezier(0.76, 0, 0.24, 1) forwards`,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ textAlign: 'center', animation: `curtainRunnerText ${duration}ms ease forwards` }}>
+            <div style={{
+              fontFamily: 'Syne, sans-serif', fontWeight: 800,
+              fontSize: 42, letterSpacing: '0.20em',
+              color: 'rgba(0,0,0,0.85)', textTransform: 'uppercase', lineHeight: 1,
+            }}>
+              {brand.name}
+            </div>
+            <div style={{
+              fontFamily: 'Syne, sans-serif', fontWeight: 600,
+              fontSize: 14, letterSpacing: '0.24em',
+              color: 'rgba(0,0,0,0.42)', textTransform: 'uppercase', marginTop: 10,
+            }}>
+              {product.label}
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
+              fontSize: 10, letterSpacing: '0.16em',
+              color: 'rgba(0,0,0,0.30)', textTransform: 'uppercase', marginTop: 6,
+            }}>
+              {product.tagline}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div
-      style={{
+    <div style={{ position: 'absolute', inset: 0, zIndex: 50, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{
         position: 'absolute', inset: 0,
+        background: '#0c0c14',
+        animation: `curtainVector ${duration}ms ease forwards`,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        pointerEvents: 'none', zIndex: 30,
-        background: 'transparent',
-        animation: `fashionTransition ${duration}ms ease forwards`,
-      }}
-    >
-      {/* Character line — translucent, never opaque */}
-      {isRunner ? (
-        <div style={{
-          width: '48%', height: 1,
-          background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.16), transparent)',
-          marginBottom: 26,
-          transformOrigin: 'left center',
-          animation: `fashionLineH ${duration * 0.82}ms ease forwards`,
-        }} />
-      ) : (
-        <div style={{
-          width: 1, height: '20%',
-          background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.14), transparent)',
-          marginBottom: 26,
-          transformOrigin: 'top center',
-          animation: `fashionLineV ${duration * 0.82}ms ease forwards`,
-        }} />
-      )}
-
-      {/* Floating brand text */}
-      <div style={{
-        textAlign: 'center',
-        animation: `fashionTextReveal ${duration}ms ease forwards`,
       }}>
-        {/* Runner: AERO/01 large / PERFORMANCE RUNNER below */}
-        {/* Vector:  AERO/01 VECTOR as single title */}
-        <div style={{
-          fontFamily: 'Syne, sans-serif',
-          fontWeight: 800,
-          fontSize: isRunner ? 36 : 22,
-          letterSpacing: isRunner ? '0.20em' : '0.30em',
-          color: isRunner ? 'rgba(0,0,0,0.76)' : 'rgba(0,0,0,0.62)',
-          textTransform: 'uppercase',
-          lineHeight: 1,
-          marginBottom: 10,
-        }}>
-          {isRunner ? brand.name : `${brand.name} ${product.label}`}
-        </div>
-
-        {isRunner && (
+        <div style={{ textAlign: 'center', animation: `curtainVectorText ${duration}ms ease forwards` }}>
           <div style={{
-            fontFamily: 'Syne, sans-serif', fontWeight: 600,
-            fontSize: 12, letterSpacing: '0.24em',
-            color: 'rgba(0,0,0,0.36)', textTransform: 'uppercase',
-            marginBottom: 8,
+            fontFamily: 'Syne, sans-serif', fontWeight: 800,
+            fontSize: 28, letterSpacing: '0.28em',
+            color: 'rgba(255,255,255,0.88)', textTransform: 'uppercase', lineHeight: 1,
           }}>
-            {product.label}
+            {brand.name} {product.label}
           </div>
-        )}
-
-        <div style={{
-          fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
-          fontSize: isRunner ? 10 : 9,
-          letterSpacing: isRunner ? '0.14em' : '0.24em',
-          color: isRunner ? 'rgba(0,0,0,0.26)' : 'rgba(0,0,0,0.32)',
-          textTransform: 'uppercase',
-        }}>
-          {product.tagline}
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
+            fontSize: 10, letterSpacing: '0.22em',
+            color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginTop: 10,
+          }}>
+            {product.tagline}
+          </div>
         </div>
       </div>
     </div>
@@ -345,10 +338,10 @@ export default function FashionViewer({ useCase, onBack }) {
           />
         )}
 
-        {/* COLORWAYS panel — floats above lower controls */}
+        {/* COLORWAYS panel — floats centered, right of left controls */}
         {activePanel === 'colors' && !modalOpen && colorways.length > 0 && (
           <div style={{
-            position: 'absolute', bottom: 120, left: '50%',
+            position: 'absolute', bottom: '16%', left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             gap: 14, zIndex: 20,
@@ -399,7 +392,7 @@ export default function FashionViewer({ useCase, onBack }) {
 
         {/* Editorial brand text — bottom-left watermark */}
         <div style={{
-          position: 'absolute', bottom: 108, left: 20,
+          position: 'absolute', bottom: 28, left: 28,
           pointerEvents: 'none', zIndex: 10,
         }}>
           <div style={{
@@ -418,12 +411,12 @@ export default function FashionViewer({ useCase, onBack }) {
           </div>
         </div>
 
-        {/* ── LOWER INTERACTION ZONE — separate floating controls, no shared background ── */}
+        {/* ── LEFT INTERACTION ZONE — vertical floating controls ── */}
         {!selectedHotspot && (
           <div style={{
-            position: 'absolute', bottom: 28, left: 0, right: 0,
-            display: 'flex', justifyContent: 'center', alignItems: 'center',
-            gap: 20, zIndex: 20,
+            position: 'absolute', left: 24, bottom: '18%',
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+            gap: 16, zIndex: 20,
             pointerEvents: 'none',
           }}>
             <FashionControlBtn
@@ -446,9 +439,9 @@ export default function FashionViewer({ useCase, onBack }) {
           </div>
         )}
 
-        {/* Product-entry transition — transparent holographic overlay */}
+        {/* Product-entry curtain — opaque branded reveal, fully removed after animation */}
         {transition && (
-          <ProductEntryTransition
+          <ProductEntryCurtain
             product={transition.product}
             brand={brand}
             onComplete={() => setTransition(null)}

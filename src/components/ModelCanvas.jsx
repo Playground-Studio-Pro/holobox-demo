@@ -67,8 +67,20 @@ function PlaceholderModel({ color }) {
   )
 }
 
-/* ── Camera rig — smooth focus transitions via lerp ── */
-function CameraRig({ focusCamera, orbitRef }) {
+/*
+ * ── Camera rig — smooth focus transitions via lerp ──
+ *
+ * BUG FIX: When returning to hero, autoRotate from the parent prop can interfere
+ * with the lerp before the transition completes, because OrbitControls.update()
+ * applies auto-rotation each frame even when called programmatically. Fix:
+ *
+ * 1. Immediately set orbitRef.current.autoRotate = false on the Three.js object
+ *    (before React can sync the prop that might be true).
+ * 2. Report transition state via onTransitionStateChange so ModelCanvas can
+ *    gate effectiveAutoRotate while the camera is moving.
+ * 3. On hero arrival: explicitly set enabled = true before reporting complete.
+ */
+function CameraRig({ focusCamera, orbitRef, onTransitionStateChange }) {
   const { camera } = useThree()
   const targetPos    = useRef(new THREE.Vector3(...HERO_POSITION))
   const targetLookAt = useRef(new THREE.Vector3(...HERO_TARGET))
@@ -86,7 +98,14 @@ function CameraRig({ focusCamera, orbitRef }) {
       targetLookAt.current.set(...HERO_TARGET)
     }
     isAnimating.current = true
-    if (orbitRef.current) orbitRef.current.enabled = false
+
+    if (orbitRef.current) {
+      orbitRef.current.enabled = false
+      // Immediately kill autoRotate on the Three.js object to prevent it from
+      // fighting the lerp before React's effectiveAutoRotate prop update lands.
+      orbitRef.current.autoRotate = false
+    }
+    onTransitionStateChange?.(true)
   }, [focusCamera])
 
   useFrame(() => {
@@ -106,9 +125,13 @@ function CameraRig({ focusCamera, orbitRef }) {
       if (orbitRef.current) {
         orbitRef.current.target.copy(targetLookAt.current)
         orbitRef.current.update()
+        // Re-enable free orbit only when returning to hero state.
+        // This must happen before onTransitionStateChange(false) so that
+        // the user can interact immediately after the transition reports complete.
         if (!inFocusMode.current) orbitRef.current.enabled = true
       }
       isAnimating.current = false
+      onTransitionStateChange?.(false)
     }
   })
 
@@ -154,6 +177,7 @@ export default function ModelCanvas({
 }) {
   const [modelExists, setModelExists] = useState(false)
   const [checked, setChecked] = useState(false)
+  const [isCameraTransitioning, setIsCameraTransitioning] = useState(false)
   const orbitRef = useRef()
 
   useEffect(() => {
@@ -169,6 +193,10 @@ export default function ModelCanvas({
 
   if (!checked) return null
 
+  // autoRotate is suppressed while the camera is transitioning (lerping to focus
+  // or back to hero). This prevents OrbitControls' update() from applying
+  // auto-rotation and fighting the lerp, which would prevent arrival detection.
+  const effectiveAutoRotate = autoRotate && !isCameraTransitioning && focusCamera === null
   const isLocked = focusCamera !== null
 
   return (
@@ -200,14 +228,18 @@ export default function ModelCanvas({
           />
         ))}
 
-        <CameraRig focusCamera={focusCamera} orbitRef={orbitRef} />
+        <CameraRig
+          focusCamera={focusCamera}
+          orbitRef={orbitRef}
+          onTransitionStateChange={setIsCameraTransitioning}
+        />
 
         <OrbitControls
           ref={orbitRef}
           enablePan={false}
           minDistance={1.8}
           maxDistance={7}
-          autoRotate={autoRotate}
+          autoRotate={effectiveAutoRotate}
           autoRotateSpeed={0.6}
           touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }}
         />
