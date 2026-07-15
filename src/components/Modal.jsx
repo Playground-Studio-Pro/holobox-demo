@@ -113,6 +113,92 @@ function LandingContent({ useCase }) {
   )
 }
 
+const FASHION_TECHNOLOGIES = [
+  'Adaptive Lockdown',
+  'Engineered Performance Upper',
+  'Responsive Cushioning',
+  'High-Traction Outsole',
+]
+
+function FashionMoreContent({ useCase }) {
+  const brand = useCase?.brand || { name: 'AERO/01', product: 'PERFORMANCE RUNNER', tagline: 'ENGINEERED FOR MOVEMENT' }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      {/* Brand header */}
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{
+          fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 26,
+          letterSpacing: '0.18em', color: 'rgba(0,0,0,0.90)',
+        }}>
+          {brand.name}
+        </div>
+        <div style={{
+          fontFamily: 'Syne, sans-serif', fontWeight: 600, fontSize: 13,
+          letterSpacing: '0.10em', color: 'rgba(0,0,0,0.60)',
+          textTransform: 'uppercase',
+        }}>
+          {brand.product}
+        </div>
+        <div style={{
+          fontFamily: 'DM Sans, sans-serif', fontWeight: 300, fontSize: 11,
+          letterSpacing: '0.14em', color: 'rgba(0,0,0,0.35)',
+          textTransform: 'uppercase',
+        }}>
+          {brand.tagline}
+        </div>
+      </div>
+
+      {/* QR */}
+      <QRContent url="aero01.com/performance-runner" />
+
+      {/* Technology list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{
+          fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 10,
+          letterSpacing: '0.18em', textTransform: 'uppercase',
+          color: 'rgba(0,0,0,0.32)',
+        }}>
+          Technology
+        </div>
+        {FASHION_TECHNOLOGIES.map(t => (
+          <div key={t} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            fontFamily: 'DM Sans, sans-serif', fontSize: 13,
+            color: 'rgba(0,0,0,0.65)', letterSpacing: '0.01em',
+          }}>
+            <span style={{ width: 16, height: 1, background: 'rgba(0,0,0,0.20)', display: 'inline-block', flexShrink: 0 }} />
+            {t}
+          </div>
+        ))}
+      </div>
+
+      {/* CTAs */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <button style={{
+          background: '#0f0f0f', color: '#ffffff',
+          border: 'none', borderRadius: 14,
+          padding: '16px 24px',
+          fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 12,
+          letterSpacing: '0.14em', textTransform: 'uppercase',
+          cursor: 'pointer', minHeight: 56,
+        }}>
+          Explore the Product
+        </button>
+        <button style={{
+          background: 'none', color: 'rgba(0,0,0,0.45)',
+          border: '1px solid rgba(0,0,0,0.12)', borderRadius: 14,
+          padding: '14px 24px',
+          fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 12,
+          letterSpacing: '0.10em', textTransform: 'uppercase',
+          cursor: 'pointer', minHeight: 52,
+        }}>
+          Visit Brand
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Modal({ open, onClose, type, useCase }) {
   const [visible, setVisible] = useState(false)
 
@@ -124,10 +210,11 @@ export default function Modal({ open, onClose, type, useCase }) {
   if (!open) return null
 
   const titles = {
-    qr:      'Compartir Demo',
-    info:    'Sobre este Demo',
-    video:   'Video',
-    landing: 'Landing Page',
+    qr:           'Compartir Demo',
+    info:         'Sobre este Demo',
+    video:        'Video',
+    landing:      'Landing Page',
+    'fashion-more': 'AERO/01',
   }
 
   return (
@@ -178,10 +265,11 @@ export default function Modal({ open, onClose, type, useCase }) {
 
         <div style={{ height: 1, background: 'rgba(0,0,0,0.06)' }} />
 
-        {type === 'qr'      && <QRContent />}
-        {type === 'info'    && <InfoContent useCase={useCase} />}
-        {type === 'video'   && <VideoContent useCase={useCase} />}
-        {type === 'landing' && <LandingContent useCase={useCase} />}
+        {type === 'qr'           && <QRContent />}
+        {type === 'info'         && <InfoContent useCase={useCase} />}
+        {type === 'video'        && <VideoContent useCase={useCase} />}
+        {type === 'landing'      && <LandingContent useCase={useCase} />}
+        {type === 'fashion-more' && <FashionMoreContent useCase={useCase} />}
       </div>
     </div>
   )

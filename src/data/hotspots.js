@@ -1,30 +1,61 @@
 export const HOTSPOTS = {
+  // ── AERO/01 sneaker — rich product story schema ──────────────────────────
   fashion: [
     {
+      id: 'lockdown',
+      eyebrow: '01',
+      label: 'Adaptive Lockdown',
+      description: 'Engineered lacing geometry distributes tension across the upper for a secure, personalized fit. Reinforced eyelets help stabilize the foot during high-impact movement.',
+      specs: [
+        'Multi-zone lacing system',
+        'Reinforced eyelet construction',
+        'Adjustable midfoot lockdown',
+        'Dynamic fit support',
+      ],
+      position: [0.35, 0.48, 0.6],
+    },
+    {
       id: 'upper',
-      label: 'Flyknit Upper',
-      description: 'Malla de ingeniería con zonas de soporte diferenciadas. Permite ventilación precisa sin sacrificar estructura.',
-      position: [0.4, 0.55, 0.6],
+      eyebrow: '02',
+      label: 'Engineered Performance Upper',
+      description: 'Lightweight engineered mesh combines targeted ventilation with structured support. High-airflow zones improve breathability while reinforced areas provide stability where the foot needs it most.',
+      specs: [
+        'Lightweight engineered mesh',
+        'Targeted ventilation zones',
+        'Reinforced support structure',
+        'Flexible forefoot construction',
+      ],
+      position: [0.50, 0.28, 0.5],
     },
     {
-      id: 'sole',
-      label: 'React Foam',
-      description: '30% más ligera que espuma convencional. Retorna el 85% de la energía con cada paso.',
-      position: [-0.2, -0.25, 0.6],
+      id: 'cushioning',
+      eyebrow: '03',
+      label: 'Responsive Cushioning',
+      description: 'A lightweight foam midsole is designed to absorb impact and provide responsive energy return through each stride, balancing soft cushioning with stable support.',
+      specs: [
+        'Lightweight foam construction',
+        'Impact absorption',
+        'Responsive energy return',
+        'Heel-to-toe transition geometry',
+      ],
+      position: [-0.10, -0.22, 0.6],
     },
     {
-      id: 'air',
-      label: 'Zoom Air',
-      description: 'Cámara de aire presurizado en el antepié. Amortiguación responsiva de alta velocidad.',
-      position: [0.3, -0.3, 0.5],
-    },
-    {
-      id: 'heel',
-      label: 'Heel Counter',
-      description: 'Contrafuerte rígido que estabiliza el talón en cada zancada. Reducción de pronación en 40%.',
-      position: [-0.5, 0.1, 0.3],
+      id: 'outsole',
+      eyebrow: '04',
+      label: 'High-Traction Outsole',
+      description: 'Strategically placed rubber zones provide grip in high-contact areas while the segmented tread pattern supports natural movement and multidirectional traction.',
+      specs: [
+        'High-abrasion rubber zones',
+        'Multidirectional traction pattern',
+        'Flex grooves',
+        'Durable high-contact construction',
+      ],
+      position: [0.05, -0.52, 0.5],
     },
   ],
+
+  // ── Other use cases — original schema preserved ───────────────────────────
   manufactura: [
     {
       id: 'block',
@@ -51,6 +82,7 @@ export const HOTSPOTS = {
       position: [0.1, -0.4, 0.4],
     },
   ],
+
   drinks: [
     {
       id: 'neck',
@@ -77,6 +109,7 @@ export const HOTSPOTS = {
       position: [-0.1, 0.85, 0.4],
     },
   ],
+
   education: [
     {
       id: 'skull',
