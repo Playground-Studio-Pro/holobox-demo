@@ -1,0 +1,38 @@
+export const USE_CASES = [
+  {
+    id: 'fashion',
+    label: 'Fashion & Luxury',
+    emoji: '👗',
+    sub: 'Sneakers · Watches · Apparel',
+    model: '/models/nike-shoe.glb',
+    color: '#f0ede8',
+    placeholderColor: '#c8b8a8',
+  },
+  {
+    id: 'manufactura',
+    label: 'Manufactura',
+    emoji: '⚙️',
+    sub: 'Engine · Turbine · Machinery',
+    model: '/models/engine.glb',
+    color: '#e8edf0',
+    placeholderColor: '#8a9aaa',
+  },
+  {
+    id: 'drinks',
+    label: 'Premium Drinks',
+    emoji: '🥃',
+    sub: 'Spirits · Wine · Consumer',
+    model: '/models/bottle.glb',
+    color: '#f0ece8',
+    placeholderColor: '#b8926a',
+  },
+  {
+    id: 'education',
+    label: 'Education & Discovery',
+    emoji: '🦕',
+    sub: 'Dinosaurs · Anatomy · Space',
+    model: '/models/trex.glb',
+    color: '#e8f0eb',
+    placeholderColor: '#8aaa8a',
+  },
+]

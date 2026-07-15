@@ -1,0 +1,182 @@
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { useGLTF, OrbitControls, Html } from '@react-three/drei'
+import { Suspense, useRef, useEffect, useState } from 'react'
+import * as THREE from 'three'
+
+/* ── Hotspot pin ── */
+function HotspotPin({ hotspot, isActive, onSelect }) {
+  function handlePointerUp(e) {
+    e.stopPropagation()
+    onSelect(hotspot)
+  }
+
+  return (
+    <Html position={hotspot.position} center zIndexRange={[10, 20]}>
+      <div style={{ position: 'relative', cursor: 'pointer' }} onPointerUp={handlePointerUp}>
+        {/* 52px touch target */}
+        <div style={{
+          width: 52, height: 52,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div className={`hotspot-dot${isActive ? ' hotspot-dot--active' : ''}`} />
+        </div>
+        {isActive && (
+          <div className="hotspot-tooltip" style={{ whiteSpace: 'nowrap' }}>
+            {hotspot.label}
+          </div>
+        )}
+      </div>
+    </Html>
+  )
+}
+
+/* ── GLB model with auto-center/scale ── */
+function Model({ path }) {
+  const { scene } = useGLTF(path)
+  const { invalidate } = useThree()
+
+  useEffect(() => {
+    if (!scene) return
+    const box = new THREE.Box3().setFromObject(scene)
+    const center = box.getCenter(new THREE.Vector3())
+    const size = box.getSize(new THREE.Vector3())
+    const maxDim = Math.max(size.x, size.y, size.z)
+    if (maxDim === 0) return
+    const scale = 1.8 / maxDim
+    scene.scale.setScalar(scale)
+    scene.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
+    invalidate()
+  }, [scene, invalidate])
+
+  return <primitive object={scene} dispose={null} />
+}
+
+/* ── Placeholder box ── */
+function PlaceholderModel({ color }) {
+  const meshRef = useRef()
+  useFrame((_, delta) => {
+    if (meshRef.current) meshRef.current.rotation.y += delta * 0.4
+  })
+  return (
+    <mesh ref={meshRef}>
+      <boxGeometry args={[1.2, 1.2, 1.2]} />
+      <meshStandardMaterial color={color || '#cccccc'} />
+    </mesh>
+  )
+}
+
+/* ── Glass zoom/reset button ── */
+function ZoomBtn({ label, onPress }) {
+  return (
+    <button
+      onPointerUp={onPress}
+      style={{
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(235,237,245,0.93) 100%)',
+        border: 'none',
+        borderRadius: 16,
+        width: 60, height: 60,
+        fontSize: label === '↺' ? 20 : 26,
+        color: 'rgba(0,0,0,0.60)',
+        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow:
+          '0 1px 0 rgba(255,255,255,1) inset,' +
+          '0 -1px 0 rgba(0,0,0,0.06) inset,' +
+          '0 4px 16px rgba(0,0,0,0.10),' +
+          '0 0 0 1px rgba(0,0,0,0.05)',
+        transition: 'all 0.15s ease',
+        userSelect: 'none', WebkitUserSelect: 'none',
+      }}
+      onPointerEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.color = 'rgba(0,0,0,0.85)' }}
+      onPointerLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.color = 'rgba(0,0,0,0.60)' }}
+      onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.93)' }}
+    >
+      {label}
+    </button>
+  )
+}
+
+export default function ModelCanvas({
+  modelPath, placeholderColor,
+  hotspots, onHotspotSelect, activeHotspotId,
+  showHotspots, autoRotate = true,
+}) {
+  const [modelExists, setModelExists] = useState(false)
+  const [checked, setChecked] = useState(false)
+  const orbitRef = useRef()
+
+  useEffect(() => {
+    if (!modelPath) { setChecked(true); return }
+    fetch(modelPath, { method: 'HEAD' })
+      .then(r => { setModelExists(r.ok); setChecked(true) })
+      .catch(() => { setModelExists(false); setChecked(true) })
+  }, [modelPath])
+
+  function handleZoomIn()  { orbitRef.current?.dollyOut(1.25); orbitRef.current?.update() }
+  function handleZoomOut() { orbitRef.current?.dollyIn(1.25);  orbitRef.current?.update() }
+  function handleReset()   { orbitRef.current?.reset() }
+
+  if (!checked) return null
+
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <Canvas
+        camera={{ position: [0, 0.3, 3.5], fov: 42 }}
+        style={{ background: 'transparent' }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
+        dpr={[1, 1.5]}
+        frameloop="always"
+      >
+        <ambientLight intensity={1.2} />
+        <directionalLight position={[3, 5, 3]} intensity={0.9} />
+        <directionalLight position={[-3, 2, -3]} intensity={0.3} />
+
+        <Suspense fallback={null}>
+          {modelExists
+            ? <Model path={modelPath} />
+            : <PlaceholderModel color={placeholderColor} />
+          }
+        </Suspense>
+
+        {showHotspots && hotspots?.map(hs => (
+          <HotspotPin
+            key={hs.id}
+            hotspot={hs}
+            isActive={activeHotspotId === hs.id}
+            onSelect={onHotspotSelect}
+          />
+        ))}
+
+        <OrbitControls
+          ref={orbitRef}
+          enablePan={false}
+          minDistance={1.8}
+          maxDistance={7}
+          autoRotate={autoRotate}
+          autoRotateSpeed={0.6}
+          touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }}
+        />
+      </Canvas>
+
+      {/* CSS-only drop shadow */}
+      <div style={{
+        position: 'absolute', bottom: '13%', left: '50%',
+        transform: 'translateX(-50%)',
+        width: '42%', height: 22, borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Zoom / Reset controls */}
+      <div style={{
+        position: 'absolute', bottom: 28, left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex', gap: 14, zIndex: 10,
+      }}>
+        <ZoomBtn label="−" onPress={handleZoomOut} />
+        <ZoomBtn label="↺" onPress={handleReset} />
+        <ZoomBtn label="+" onPress={handleZoomIn} />
+      </div>
+    </div>
+  )
+}
