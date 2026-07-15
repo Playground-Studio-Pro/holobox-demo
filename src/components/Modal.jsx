@@ -137,7 +137,7 @@ function FashionMoreContent({ brand, product }) {
           letterSpacing: '0.14em', color: 'rgba(0,0,0,0.35)',
           textTransform: 'uppercase',
         }}>
-          {brand?.tagline}
+          {product?.tagline}
         </div>
       </div>
 

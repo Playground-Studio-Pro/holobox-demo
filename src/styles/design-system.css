@@ -1,3 +1,7 @@
+html, #root {
+  background: transparent;
+}
+
 :root {
   --bg-base:        #ffffff;
   --bg-surface:     rgba(255,255,255,0.85);
@@ -328,4 +332,34 @@ body {
   color: rgba(0,0,0,0.80);
   letter-spacing: 0.02em;
   pointer-events: none;
+}
+
+/* ── Fashion product entry transitions ── */
+
+@keyframes fashionTransition {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes fashionLineH {
+  0%   { transform: scaleX(0); opacity: 0; }
+  22%  { opacity: 1; }
+  72%  { opacity: 1; transform: scaleX(1); }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes fashionLineV {
+  0%   { transform: scaleY(0); opacity: 0; }
+  28%  { opacity: 1; }
+  72%  { opacity: 1; transform: scaleY(1); }
+  100% { transform: scaleY(0); opacity: 0; }
+}
+
+@keyframes fashionTextReveal {
+  0%   { opacity: 0; transform: translateY(10px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
 }

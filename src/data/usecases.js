@@ -8,12 +8,13 @@ export const USE_CASES = [
     placeholderColor: '#c8b8a8',
     brand: {
       name: 'AERO/01',
-      tagline: 'ENGINEERED FOR MOVEMENT',
     },
     products: [
       {
         id: 'runner',
         label: 'Performance Runner',
+        tagline: 'ENGINEERED FOR MOVEMENT',
+        theme: { accentColor: 'rgba(0,0,0,0.88)', motionSpeed: 'fast' },
         model: '/models/nike-shoe.glb',
         colorways: [
           { id: 'original', label: 'Original', color: '#c8b4a0', path: '/models/nike-shoe.glb' },
@@ -67,7 +68,9 @@ export const USE_CASES = [
       },
       {
         id: 'watch',
-        label: 'Precision Watch',
+        label: 'VECTOR',
+        tagline: 'PRECISION IN MOTION',
+        theme: { accentColor: 'rgba(15,15,20,0.92)', motionSpeed: 'slow' },
         model: '/models/aero-watch.glb',
         colorways: [],
         hotspots: [
@@ -109,9 +112,9 @@ export const USE_CASES = [
           },
         ],
         more: {
-          url: 'aero01.com/precision-watch',
+          url: 'aero01.com/vector',
           technologies: ['Case Construction', 'Crown / Controls', 'Dial / Display', 'Strap / Material'],
-          primaryCta:   { label: 'Explore the Watch' },
+          primaryCta:   { label: 'Explore VECTOR' },
           secondaryCta: { label: 'Visit Brand' },
         },
       },
