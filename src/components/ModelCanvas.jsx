@@ -3,6 +3,9 @@ import { useGLTF, OrbitControls, Html } from '@react-three/drei'
 import { Suspense, useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 
+const HERO_POSITION = [0, 0.3, 3.5]
+const HERO_TARGET   = [0, 0, 0]
+
 /* ── Hotspot pin ── */
 function HotspotPin({ hotspot, isActive, onSelect }) {
   function handlePointerUp(e) {
@@ -13,7 +16,6 @@ function HotspotPin({ hotspot, isActive, onSelect }) {
   return (
     <Html position={hotspot.position} center zIndexRange={[10, 20]}>
       <div style={{ position: 'relative', cursor: 'pointer' }} onPointerUp={handlePointerUp}>
-        {/* 52px touch target */}
         <div style={{
           width: 52, height: 52,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -65,6 +67,54 @@ function PlaceholderModel({ color }) {
   )
 }
 
+/* ── Camera rig — smooth focus transitions via lerp ── */
+function CameraRig({ focusCamera, orbitRef }) {
+  const { camera } = useThree()
+  const targetPos    = useRef(new THREE.Vector3(...HERO_POSITION))
+  const targetLookAt = useRef(new THREE.Vector3(...HERO_TARGET))
+  const inFocusMode  = useRef(false)
+  const isAnimating  = useRef(false)
+
+  useEffect(() => {
+    if (focusCamera) {
+      inFocusMode.current = true
+      targetPos.current.set(...focusCamera.position)
+      targetLookAt.current.set(...focusCamera.target)
+    } else {
+      inFocusMode.current = false
+      targetPos.current.set(...HERO_POSITION)
+      targetLookAt.current.set(...HERO_TARGET)
+    }
+    isAnimating.current = true
+    if (orbitRef.current) orbitRef.current.enabled = false
+  }, [focusCamera])
+
+  useFrame(() => {
+    if (!isAnimating.current) return
+
+    camera.position.lerp(targetPos.current, 0.08)
+    if (orbitRef.current) {
+      orbitRef.current.target.lerp(targetLookAt.current, 0.08)
+      orbitRef.current.update()
+    }
+
+    const posArrived = camera.position.distanceTo(targetPos.current) < 0.008
+    const tgtArrived = !orbitRef.current || orbitRef.current.target.distanceTo(targetLookAt.current) < 0.008
+
+    if (posArrived && tgtArrived) {
+      camera.position.copy(targetPos.current)
+      if (orbitRef.current) {
+        orbitRef.current.target.copy(targetLookAt.current)
+        orbitRef.current.update()
+        if (!inFocusMode.current) orbitRef.current.enabled = true
+      }
+      isAnimating.current = false
+    }
+  })
+
+  return null
+}
+
 /* ── Glass zoom/reset button ── */
 function ZoomBtn({ label, onPress }) {
   return (
@@ -100,6 +150,7 @@ export default function ModelCanvas({
   modelPath, placeholderColor,
   hotspots, onHotspotSelect, activeHotspotId,
   showHotspots, autoRotate = true,
+  focusCamera = null,
 }) {
   const [modelExists, setModelExists] = useState(false)
   const [checked, setChecked] = useState(false)
@@ -118,10 +169,12 @@ export default function ModelCanvas({
 
   if (!checked) return null
 
+  const isLocked = focusCamera !== null
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas
-        camera={{ position: [0, 0.3, 3.5], fov: 42 }}
+        camera={{ position: HERO_POSITION, fov: 42 }}
         style={{ background: 'transparent' }}
         gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
         dpr={[1, 1.5]}
@@ -147,6 +200,8 @@ export default function ModelCanvas({
           />
         ))}
 
+        <CameraRig focusCamera={focusCamera} orbitRef={orbitRef} />
+
         <OrbitControls
           ref={orbitRef}
           enablePan={false}
@@ -167,16 +222,18 @@ export default function ModelCanvas({
         pointerEvents: 'none',
       }} />
 
-      {/* Zoom / Reset controls */}
-      <div style={{
-        position: 'absolute', bottom: 28, left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex', gap: 14, zIndex: 10,
-      }}>
-        <ZoomBtn label="−" onPress={handleZoomOut} />
-        <ZoomBtn label="↺" onPress={handleReset} />
-        <ZoomBtn label="+" onPress={handleZoomIn} />
-      </div>
+      {/* Zoom / Reset controls — hidden in focus mode */}
+      {!isLocked && (
+        <div style={{
+          position: 'absolute', bottom: 28, left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex', gap: 14, zIndex: 10,
+        }}>
+          <ZoomBtn label="−" onPress={handleZoomOut} />
+          <ZoomBtn label="↺" onPress={handleReset} />
+          <ZoomBtn label="+" onPress={handleZoomIn} />
+        </div>
+      )}
     </div>
   )
 }

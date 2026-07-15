@@ -113,15 +113,8 @@ function LandingContent({ useCase }) {
   )
 }
 
-const FASHION_TECHNOLOGIES = [
-  'Adaptive Lockdown',
-  'Engineered Performance Upper',
-  'Responsive Cushioning',
-  'High-Traction Outsole',
-]
-
-function FashionMoreContent({ useCase }) {
-  const brand = useCase?.brand || { name: 'AERO/01', product: 'PERFORMANCE RUNNER', tagline: 'ENGINEERED FOR MOVEMENT' }
+function FashionMoreContent({ brand, product }) {
+  const more = product?.more || {}
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* Brand header */}
@@ -130,76 +123,82 @@ function FashionMoreContent({ useCase }) {
           fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 26,
           letterSpacing: '0.18em', color: 'rgba(0,0,0,0.90)',
         }}>
-          {brand.name}
+          {brand?.name}
         </div>
         <div style={{
           fontFamily: 'Syne, sans-serif', fontWeight: 600, fontSize: 13,
           letterSpacing: '0.10em', color: 'rgba(0,0,0,0.60)',
           textTransform: 'uppercase',
         }}>
-          {brand.product}
+          {product?.label}
         </div>
         <div style={{
           fontFamily: 'DM Sans, sans-serif', fontWeight: 300, fontSize: 11,
           letterSpacing: '0.14em', color: 'rgba(0,0,0,0.35)',
           textTransform: 'uppercase',
         }}>
-          {brand.tagline}
+          {brand?.tagline}
         </div>
       </div>
 
       {/* QR */}
-      <QRContent url="aero01.com/performance-runner" />
+      <QRContent url={more.url || 'aero01.com'} />
 
       {/* Technology list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{
-          fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 10,
-          letterSpacing: '0.18em', textTransform: 'uppercase',
-          color: 'rgba(0,0,0,0.32)',
-        }}>
-          Technology
-        </div>
-        {FASHION_TECHNOLOGIES.map(t => (
-          <div key={t} style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-            color: 'rgba(0,0,0,0.65)', letterSpacing: '0.01em',
+      {more.technologies?.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 10,
+            letterSpacing: '0.18em', textTransform: 'uppercase',
+            color: 'rgba(0,0,0,0.32)',
           }}>
-            <span style={{ width: 16, height: 1, background: 'rgba(0,0,0,0.20)', display: 'inline-block', flexShrink: 0 }} />
-            {t}
+            Technology
           </div>
-        ))}
-      </div>
+          {more.technologies.map(t => (
+            <div key={t} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              fontFamily: 'DM Sans, sans-serif', fontSize: 13,
+              color: 'rgba(0,0,0,0.65)', letterSpacing: '0.01em',
+            }}>
+              <span style={{ width: 16, height: 1, background: 'rgba(0,0,0,0.20)', display: 'inline-block', flexShrink: 0 }} />
+              {t}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* CTAs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button style={{
-          background: '#0f0f0f', color: '#ffffff',
-          border: 'none', borderRadius: 14,
-          padding: '16px 24px',
-          fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 12,
-          letterSpacing: '0.14em', textTransform: 'uppercase',
-          cursor: 'pointer', minHeight: 56,
-        }}>
-          Explore the Product
-        </button>
-        <button style={{
-          background: 'none', color: 'rgba(0,0,0,0.45)',
-          border: '1px solid rgba(0,0,0,0.12)', borderRadius: 14,
-          padding: '14px 24px',
-          fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 12,
-          letterSpacing: '0.10em', textTransform: 'uppercase',
-          cursor: 'pointer', minHeight: 52,
-        }}>
-          Visit Brand
-        </button>
+        {more.primaryCta && (
+          <button style={{
+            background: '#0f0f0f', color: '#ffffff',
+            border: 'none', borderRadius: 14,
+            padding: '16px 24px',
+            fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 12,
+            letterSpacing: '0.14em', textTransform: 'uppercase',
+            cursor: 'pointer', minHeight: 56,
+          }}>
+            {more.primaryCta.label}
+          </button>
+        )}
+        {more.secondaryCta && (
+          <button style={{
+            background: 'none', color: 'rgba(0,0,0,0.45)',
+            border: '1px solid rgba(0,0,0,0.12)', borderRadius: 14,
+            padding: '14px 24px',
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 12,
+            letterSpacing: '0.10em', textTransform: 'uppercase',
+            cursor: 'pointer', minHeight: 52,
+          }}>
+            {more.secondaryCta.label}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
-export default function Modal({ open, onClose, type, useCase }) {
+export default function Modal({ open, onClose, type, useCase, product }) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -214,7 +213,7 @@ export default function Modal({ open, onClose, type, useCase }) {
     info:         'Sobre este Demo',
     video:        'Video',
     landing:      'Landing Page',
-    'fashion-more': 'AERO/01',
+    'fashion-more': useCase?.brand?.name || 'More',
   }
 
   return (
@@ -269,7 +268,7 @@ export default function Modal({ open, onClose, type, useCase }) {
         {type === 'info'         && <InfoContent useCase={useCase} />}
         {type === 'video'        && <VideoContent useCase={useCase} />}
         {type === 'landing'      && <LandingContent useCase={useCase} />}
-        {type === 'fashion-more' && <FashionMoreContent useCase={useCase} />}
+        {type === 'fashion-more' && <FashionMoreContent brand={useCase?.brand} product={product} />}
       </div>
     </div>
   )

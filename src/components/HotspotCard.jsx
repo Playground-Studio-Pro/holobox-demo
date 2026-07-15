@@ -1,15 +1,22 @@
-export default function HotspotCard({ hotspot, onClose }) {
+export default function HotspotCard({
+  hotspot, onClose,
+  onPrev, onNext,
+  hotspotIndex, totalHotspots,
+  isTourMode,
+}) {
   if (!hotspot) return null
 
   const hasSpecs   = hotspot.specs?.length > 0
   const hasEyebrow = Boolean(hotspot.eyebrow)
+  const hasNav     = Boolean(onNext)
+  const isLast     = hotspotIndex != null && totalHotspots != null && hotspotIndex === totalHotspots - 1
 
   return (
     <div
       key={hotspot.id}
       style={{
         position: 'absolute',
-        top: '20%',
+        top: '18%',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 25,
@@ -18,7 +25,7 @@ export default function HotspotCard({ hotspot, onClose }) {
         backdropFilter: 'blur(28px)',
         WebkitBackdropFilter: 'blur(28px)',
         borderRadius: 20,
-        padding: hasSpecs ? '22px 22px 20px' : '22px 22px 20px',
+        padding: '22px 22px 20px',
         boxShadow:
           '0 1px 0 rgba(255,255,255,1) inset,' +
           '0 16px 48px rgba(0,0,0,0.12),' +
@@ -28,32 +35,35 @@ export default function HotspotCard({ hotspot, onClose }) {
       }}
       onPointerUp={e => e.stopPropagation()}
     >
+      {/* Tour mode eyebrow */}
+      {isTourMode && (
+        <div style={{
+          fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 9,
+          letterSpacing: '0.22em', textTransform: 'uppercase',
+          color: 'rgba(0,0,0,0.28)', marginBottom: 10,
+        }}>
+          Guided Tour
+        </div>
+      )}
+
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Eyebrow — shown only for rich-schema hotspots (fashion) */}
-          {hasEyebrow && (
+          {hasEyebrow && !isTourMode && (
             <div style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontWeight: 500,
-              fontSize: 10,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(0,0,0,0.32)',
-              marginBottom: 5,
+              fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 10,
+              letterSpacing: '0.18em', textTransform: 'uppercase',
+              color: 'rgba(0,0,0,0.32)', marginBottom: 5,
             }}>
               {hotspot.eyebrow}
             </div>
           )}
           <h3 style={{
-            fontFamily: 'Syne, sans-serif',
-            fontWeight: 700,
+            fontFamily: 'Syne, sans-serif', fontWeight: 700,
             fontSize: hasEyebrow ? 15 : 17,
             letterSpacing: hasEyebrow ? '0.03em' : '0.01em',
             textTransform: hasEyebrow ? 'uppercase' : 'none',
-            color: 'rgba(0,0,0,0.86)',
-            lineHeight: 1.25,
-            margin: 0,
+            color: 'rgba(0,0,0,0.86)', lineHeight: 1.25, margin: 0,
           }}>
             {hotspot.label}
           </h3>
@@ -61,17 +71,11 @@ export default function HotspotCard({ hotspot, onClose }) {
         <button
           onPointerUp={onClose}
           style={{
-            background: 'rgba(0,0,0,0.05)',
-            border: 'none',
-            borderRadius: 9,
-            width: 32, height: 32,
-            fontSize: 13,
-            color: 'rgba(0,0,0,0.32)',
-            cursor: 'pointer',
+            background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 9,
+            width: 32, height: 32, fontSize: 13,
+            color: 'rgba(0,0,0,0.32)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-            marginLeft: 12,
-            marginTop: 2,
+            flexShrink: 0, marginLeft: 12, marginTop: 2,
           }}
         >✕</button>
       </div>
@@ -81,36 +85,74 @@ export default function HotspotCard({ hotspot, onClose }) {
 
       {/* Description */}
       <p style={{
-        fontFamily: 'DM Sans, sans-serif',
-        fontSize: 13,
-        fontWeight: 400,
-        color: 'rgba(0,0,0,0.55)',
-        lineHeight: 1.72,
-        margin: 0,
+        fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 400,
+        color: 'rgba(0,0,0,0.55)', lineHeight: 1.72, margin: 0,
         marginBottom: hasSpecs ? 14 : 0,
       }}>
         {hotspot.description}
       </p>
 
-      {/* Specs list — only rendered for rich-schema hotspots */}
+      {/* Specs list */}
       {hasSpecs && (
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 5 }}>
           {hotspot.specs.map((spec, i) => (
             <li key={i} style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: 11,
-              fontWeight: 500,
-              letterSpacing: '0.05em',
-              color: 'rgba(0,0,0,0.38)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
+              fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500,
+              letterSpacing: '0.05em', color: 'rgba(0,0,0,0.38)',
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ width: 12, height: 1, background: 'rgba(0,0,0,0.25)', display: 'inline-block', flexShrink: 0 }} />
               {spec}
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Prev / Next navigation */}
+      {hasNav && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginTop: 18, paddingTop: 14,
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+        }}>
+          <button
+            onPointerUp={onPrev}
+            disabled={!onPrev}
+            style={{
+              background: 'none', border: 'none', cursor: onPrev ? 'pointer' : 'default',
+              fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: onPrev ? 'rgba(0,0,0,0.50)' : 'rgba(0,0,0,0.18)',
+              padding: '8px 4px', minHeight: 36,
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            ← Prev
+          </button>
+
+          {totalHotspots != null && (
+            <span style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 10,
+              letterSpacing: '0.10em', color: 'rgba(0,0,0,0.30)',
+            }}>
+              {String(hotspotIndex + 1).padStart(2, '0')} / {String(totalHotspots).padStart(2, '0')}
+            </span>
+          )}
+
+          <button
+            onPointerUp={onNext}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 500,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: 'rgba(0,0,0,0.65)',
+              padding: '8px 4px', minHeight: 36,
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            {isTourMode && isLast ? 'Finish' : 'Next'} →
+          </button>
+        </div>
       )}
     </div>
   )

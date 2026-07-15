@@ -4,7 +4,6 @@ import ModelCanvas from '../components/ModelCanvas.jsx'
 import SideButtons from '../components/SideButtons.jsx'
 import HotspotCard from '../components/HotspotCard.jsx'
 import Modal from '../components/Modal.jsx'
-import { HOTSPOTS } from '../data/hotspots.js'
 
 const SIDE_BUTTONS = [
   { id: 'tour',   icon: '▷', label: 'TOUR'   },
@@ -13,50 +12,118 @@ const SIDE_BUTTONS = [
 ]
 
 export default function FashionViewer({ useCase, onBack }) {
-  const brand      = useCase.brand
-  const colorways  = useCase.colorways || []
-  const hotspots   = HOTSPOTS.fashion || []
+  const brand    = useCase.brand
+  const products = useCase.products || []
 
-  const [activeColorway, setActiveColorway]       = useState(colorways[0] || null)
-  const [activePanel, setActivePanel]             = useState(null)   // 'tour' | 'colors' | null
-  const [activeHotspotId, setActiveHotspotId]     = useState(null)
-  const [selectedHotspot, setSelectedHotspot]     = useState(null)
-  const [modal, setModal]                         = useState(null)
+  const [activeProduct, setActiveProduct]   = useState(products[0] || null)
+  const [activeColorway, setActiveColorway] = useState(products[0]?.colorways[0] || null)
+  const [activePanel, setActivePanel]       = useState(null)
+  const [activeHotspotId, setActiveHotspotId] = useState(null)
+  const [selectedHotspot, setSelectedHotspot] = useState(null)
+  const [focusCamera, setFocusCamera]         = useState(null)
+  const [isTourMode, setIsTourMode]           = useState(false)
+  const [modal, setModal]                     = useState(null)
 
-  const modalOpen   = modal !== null
-  const modelPath   = activeColorway?.path || useCase.model
+  const modalOpen    = modal !== null
+  const hotspots     = activeProduct?.hotspots || []
+  const colorways    = activeProduct?.colorways || []
+  const hotspotIndex = hotspots.findIndex(h => h.id === activeHotspotId)
+  const modelPath    = activeColorway?.path || activeProduct?.model
+
+  /* ── Internal: navigate to a specific hotspot ── */
+  function goToHotspot(hotspot) {
+    setActiveHotspotId(hotspot.id)
+    setSelectedHotspot(hotspot)
+    if (hotspot.camera) setFocusCamera(hotspot.camera)
+  }
+
+  /* ── Internal: close hotspot and return to hero ── */
+  function closeHotspot() {
+    setActiveHotspotId(null)
+    setSelectedHotspot(null)
+    setFocusCamera(null)
+  }
+
+  /* ── Internal: end tour ── */
+  function endTour() {
+    setIsTourMode(false)
+    setActivePanel(null)
+    closeHotspot()
+  }
+
+  /* ── Product switcher ── */
+  function handleProductSelect(product) {
+    if (product.id === activeProduct?.id) return
+    setActiveProduct(product)
+    setActiveColorway(product.colorways[0] || null)
+    setActivePanel(null)
+    setIsTourMode(false)
+    closeHotspot()
+  }
 
   /* ── Side buttons ── */
   function handleSideBtn(btn) {
+    if (isTourMode) {
+      if (btn.id === 'tour') endTour()
+      return
+    }
     if (btn.id === 'more') {
-      setModal({ type: 'fashion-more' })
+      setModal({ type: 'fashion-more', product: activeProduct })
       setActivePanel(null)
+      return
+    }
+    if (btn.id === 'tour') {
+      if (hotspots.length === 0) return
+      setIsTourMode(true)
+      setActivePanel('tour')
+      goToHotspot(hotspots[0])
       return
     }
     setActivePanel(prev => prev === btn.id ? null : btn.id)
   }
 
-  /* ── Hotspot ── */
+  /* ── Hotspot selection (from 3D pins) ── */
   function handleHotspotSelect(hotspot) {
     if (activeHotspotId === hotspot.id) {
-      setActiveHotspotId(null)
-      setSelectedHotspot(null)
+      if (isTourMode) {
+        endTour()
+      } else {
+        closeHotspot()
+      }
     } else {
-      setActiveHotspotId(hotspot.id)
-      setSelectedHotspot(hotspot)
+      if (isTourMode) endTour()
+      goToHotspot(hotspot)
     }
   }
 
-  function closeHotspotCard() {
-    setActiveHotspotId(null)
-    setSelectedHotspot(null)
+  /* ── Hotspot card close ── */
+  function handleCardClose() {
+    if (isTourMode) {
+      endTour()
+    } else {
+      closeHotspot()
+    }
+  }
+
+  /* ── Prev / Next hotspot navigation ── */
+  function handlePrev() {
+    if (hotspotIndex <= 0) return
+    goToHotspot(hotspots[hotspotIndex - 1])
+  }
+
+  function handleNext() {
+    const isLast = hotspotIndex === hotspots.length - 1
+    if (isTourMode && isLast) {
+      endTour()
+      return
+    }
+    if (!isLast) goToHotspot(hotspots[hotspotIndex + 1])
   }
 
   /* ── Colorway selection ── */
   function handleColorwaySelect(cw) {
     setActiveColorway(cw)
-    // Close hotspot card when switching model — positions may differ
-    closeHotspotCard()
+    closeHotspot()
   }
 
   return (
@@ -102,10 +169,45 @@ export default function FashionViewer({ useCase, onBack }) {
             letterSpacing: '0.12em', textTransform: 'uppercase',
             color: 'rgba(0,0,0,0.38)', marginTop: 4,
           }}>
-            {brand.product}
+            {activeProduct?.label}
           </div>
         </div>
       </div>
+
+      {/* ── Product switcher ── */}
+      {products.length > 1 && (
+        <div style={{
+          flexShrink: 0,
+          display: 'flex', justifyContent: 'center',
+          gap: 8, padding: '0 28px 12px',
+          zIndex: 10,
+        }}>
+          {products.map(p => {
+            const isActive = p.id === activeProduct?.id
+            return (
+              <button
+                key={p.id}
+                onPointerUp={() => handleProductSelect(p)}
+                style={{
+                  background: isActive ? 'rgba(0,0,0,0.88)' : 'transparent',
+                  color: isActive ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.38)',
+                  border: isActive ? 'none' : '1px solid rgba(0,0,0,0.14)',
+                  borderRadius: 100,
+                  padding: '0 20px',
+                  height: 36, minHeight: 44,
+                  fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 10,
+                  letterSpacing: '0.12em', textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex', alignItems: 'center',
+                }}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── 2-column layout: side buttons + canvas ── */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -126,15 +228,24 @@ export default function FashionViewer({ useCase, onBack }) {
             activeHotspotId={activeHotspotId}
             showHotspots={!modalOpen}
             autoRotate={selectedHotspot === null && activePanel !== 'colors'}
+            focusCamera={focusCamera}
           />
 
           {/* Floating hotspot card */}
           {selectedHotspot && !modalOpen && (
-            <HotspotCard hotspot={selectedHotspot} onClose={closeHotspotCard} />
+            <HotspotCard
+              hotspot={selectedHotspot}
+              onClose={handleCardClose}
+              onPrev={hotspotIndex > 0 ? handlePrev : null}
+              onNext={handleNext}
+              hotspotIndex={hotspotIndex}
+              totalHotspots={hotspots.length}
+              isTourMode={isTourMode}
+            />
           )}
 
-          {/* TOUR — placeholder */}
-          {activePanel === 'tour' && !modalOpen && (
+          {/* TOUR — Coming soon placeholder (shown only when no hotspot is focused) */}
+          {activePanel === 'tour' && !selectedHotspot && !modalOpen && (
             <div style={{
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -50%)',
@@ -151,7 +262,7 @@ export default function FashionViewer({ useCase, onBack }) {
                 fontFamily: 'DM Sans, sans-serif', fontSize: 12,
                 color: 'rgba(0,0,0,0.18)', letterSpacing: '0.04em',
               }}>
-                Coming Soon
+                Loading…
               </div>
             </div>
           )}
@@ -208,7 +319,7 @@ export default function FashionViewer({ useCase, onBack }) {
             </div>
           )}
 
-          {/* Editorial brand text — bottom left of canvas */}
+          {/* Editorial brand text */}
           <div style={{
             position: 'absolute', bottom: 36, left: 20,
             pointerEvents: 'none', zIndex: 10,
@@ -239,6 +350,7 @@ export default function FashionViewer({ useCase, onBack }) {
           onClose={() => setModal(null)}
           type={modal.type}
           useCase={useCase}
+          product={modal.product}
         />,
         document.body
       )}
