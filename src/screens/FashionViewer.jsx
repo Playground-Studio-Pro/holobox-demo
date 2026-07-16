@@ -65,14 +65,14 @@ function ProductEntryCurtain({ product, isInitial, modelReady, onComplete }) {
   const brandName = product.brand?.name || ''
 
   // Per-brand timing constants (ms)
-  const ENTER_MS    = isNike ? 320  : 580
-  const EXIT_MS     = isNike ? 500  : 660
+  const ENTER_MS    = isNike ? 260  : 440
+  const EXIT_MS     = isNike ? 380  : 520
   const MIN_HOLD_MS = isInitial
-    ? (isNike ? 1500 : 2000)
-    : (isNike ? 1000 : 1350)
+    ? (isNike ? 1000 : 1300)
+    : (isNike ?  720 :  920)
   const SAFETY_MS   = isInitial
-    ? (isNike ? 4000 : 5000)
-    : (isNike ? 2800 : 3800)
+    ? (isNike ? 2800 : 3500)
+    : (isNike ? 2000 : 2800)
 
   const [hasEntered,  setHasEntered]  = useState(false)
   const [minHoldDone, setMinHoldDone] = useState(false)
