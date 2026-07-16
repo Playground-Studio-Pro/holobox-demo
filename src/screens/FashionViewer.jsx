@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import ModelCanvas from '../components/ModelCanvas.jsx'
 import HotspotCard from '../components/HotspotCard.jsx'
 import Modal from '../components/Modal.jsx'
 
-/* ── Floating control button — independent, no shared background ── */
+/* ── Floating control button ── */
 function FashionControlBtn({ label, active, onPress }) {
   return (
     <button
@@ -40,46 +40,141 @@ function FashionControlBtn({ label, active, onPress }) {
   )
 }
 
-/* ── Branded product-entry curtain — opaque, temporary, fully removed after animation ── */
-function ProductEntryCurtain({ product, onComplete }) {
-  const isRunner  = product.id === 'runner'
-  const duration  = isRunner ? 1300 : 1900
+/*
+ * ── ProductEntryCurtain ──
+ *
+ * Three-phase state machine: entering → holding → exiting.
+ *
+ * Phases:
+ *   entering  CSS enter animation starts on mount via requestAnimationFrame.
+ *   holding   Curtain is fully visible. Waits for BOTH:
+ *               • minHoldDone  (minimum branded hold time elapsed from mount)
+ *               • modelReady   (ModelCanvas reported the GLB is normalized)
+ *   exiting   Exit animation plays. After it completes, onComplete() unmounts
+ *             the curtain and returns the viewer to full transparency.
+ *
+ * A safety timeout forces exit if the model never reports ready (e.g., the
+ * user switched colorways while a transition was in progress).
+ *
+ * Stale readiness is handled by the parent: modelReady is only true when
+ * the reported path matches transition.expectedPath, so a late callback
+ * from a previously-loaded product cannot unlock the wrong curtain.
+ */
+function ProductEntryCurtain({ product, isInitial, modelReady, onComplete }) {
+  const isNike    = product.id === 'runner'
   const brandName = product.brand?.name || ''
 
-  useEffect(() => {
-    const t = setTimeout(onComplete, duration)
-    return () => clearTimeout(t)
-  }, [duration, onComplete])
+  // Per-brand timing constants (ms)
+  const ENTER_MS    = isNike ? 320  : 580
+  const EXIT_MS     = isNike ? 500  : 660
+  const MIN_HOLD_MS = isInitial
+    ? (isNike ? 1500 : 2000)
+    : (isNike ? 1000 : 1350)
+  const SAFETY_MS   = isInitial
+    ? (isNike ? 4000 : 5000)
+    : (isNike ? 2800 : 3800)
 
-  if (isRunner) {
+  const [hasEntered,  setHasEntered]  = useState(false)
+  const [minHoldDone, setMinHoldDone] = useState(false)
+  const [exiting,     setExiting]     = useState(false)
+  const onCompleteRef = useRef(onComplete)
+  useEffect(() => { onCompleteRef.current = onComplete })
+
+  // Trigger CSS enter on the first paint
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setHasEntered(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  // Minimum branded hold timer (from mount, not from enter-complete)
+  useEffect(() => {
+    const t = setTimeout(() => setMinHoldDone(true), MIN_HOLD_MS)
+    return () => clearTimeout(t)
+  }, [MIN_HOLD_MS])
+
+  // Safety: force exit if model never reports ready
+  useEffect(() => {
+    const t = setTimeout(() => setExiting(true), SAFETY_MS)
+    return () => clearTimeout(t)
+  }, [SAFETY_MS])
+
+  // Trigger exit when both conditions are satisfied
+  useEffect(() => {
+    if (exiting || !minHoldDone || !modelReady) return
+    setExiting(true)
+  }, [exiting, minHoldDone, modelReady])
+
+  // After exit animation, call onComplete
+  useEffect(() => {
+    if (!exiting) return
+    const t = setTimeout(() => onCompleteRef.current?.(), EXIT_MS)
+    return () => clearTimeout(t)
+  }, [exiting, EXIT_MS])
+
+  // ── Nike curtain — energetic directional wipe ──
+  if (isNike) {
+    const slideY = exiting
+      ? 'translateY(110%)'
+      : hasEntered
+      ? 'translateY(0%)'
+      : 'translateY(-100%)'
+    const slideTransition = `transform ${exiting ? EXIT_MS : ENTER_MS}ms cubic-bezier(0.76, 0, 0.24, 1)`
+
+    const textVisible  = hasEntered && !exiting
+    const textOpacity  = textVisible ? 1 : 0
+    const textTranslate = textVisible ? 'translateY(0)' : exiting ? 'translateY(-10px)' : 'translateY(18px)'
+    const textDelay    = exiting ? 0 : Math.round(ENTER_MS * 0.35)
+    const textDuration = exiting ? 160 : 260
+
     return (
-      <div style={{ position: 'absolute', inset: 0, zIndex: 50, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 50,
+        pointerEvents: 'none', overflow: 'hidden',
+      }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: '#f2ede7',
-          animation: `curtainRunner ${duration}ms cubic-bezier(0.76, 0, 0.24, 1) forwards`,
+          background: '#f0ebe4',
+          transform: slideY,
+          transition: slideTransition,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <div style={{ textAlign: 'center', animation: `curtainRunnerText ${duration}ms ease forwards` }}>
+          {/* Large brand wordmark */}
+          <div style={{
+            textAlign: 'center',
+            opacity: textOpacity,
+            transform: textTranslate,
+            transition: `opacity ${textDuration}ms ease ${textDelay}ms, transform ${textDuration}ms ease ${textDelay}ms`,
+          }}>
             <div style={{
               fontFamily: 'Syne, sans-serif', fontWeight: 800,
-              fontSize: 42, letterSpacing: '0.20em',
-              color: 'rgba(0,0,0,0.85)', textTransform: 'uppercase', lineHeight: 1,
+              fontSize: 64, letterSpacing: '0.12em',
+              color: 'rgba(0,0,0,0.88)', textTransform: 'uppercase',
+              lineHeight: 1,
             }}>
               {brandName}
             </div>
+
+            {/* Accent bar */}
             <div style={{
-              fontFamily: 'Syne, sans-serif', fontWeight: 600,
-              fontSize: 14, letterSpacing: '0.24em',
-              color: 'rgba(0,0,0,0.42)', textTransform: 'uppercase', marginTop: 10,
+              width: 48, height: 2,
+              background: 'rgba(0,0,0,0.20)',
+              margin: '16px auto 0',
+            }} />
+
+            <div style={{
+              fontFamily: 'Syne, sans-serif', fontWeight: 500,
+              fontSize: 12, letterSpacing: '0.30em',
+              color: 'rgba(0,0,0,0.40)', textTransform: 'uppercase',
+              marginTop: 14,
             }}>
               {product.label}
             </div>
             <div style={{
               fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
-              fontSize: 10, letterSpacing: '0.16em',
-              color: 'rgba(0,0,0,0.30)', textTransform: 'uppercase', marginTop: 6,
+              fontSize: 9, letterSpacing: '0.22em',
+              color: 'rgba(0,0,0,0.25)', textTransform: 'uppercase',
+              marginTop: 8,
             }}>
               {product.tagline}
             </div>
@@ -89,31 +184,84 @@ function ProductEntryCurtain({ product, onComplete }) {
     )
   }
 
+  // ── Rolex curtain — restrained premium fade ──
+  const fadeOpacity  = exiting ? 0 : hasEntered ? 1 : 0
+  const fadeTransition = `opacity ${exiting ? EXIT_MS : ENTER_MS}ms ${exiting ? 'cubic-bezier(0.4,0,1,1)' : 'cubic-bezier(0,0,0.3,1)'}`
+
+  const contentDelay    = exiting ? 0 : Math.round(ENTER_MS * 0.45)
+  const contentDuration = exiting ? 220 : 380
+  const contentOpacity  = hasEntered && !exiting ? 1 : 0
+
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 50, pointerEvents: 'none', overflow: 'hidden' }}>
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 50,
+      pointerEvents: 'none', overflow: 'hidden',
+    }}>
       <div style={{
         position: 'absolute', inset: 0,
-        background: '#0c0c14',
-        animation: `curtainVector ${duration}ms ease forwards`,
+        background: '#0a0a12',
+        opacity: fadeOpacity,
+        transition: fadeTransition,
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
+        gap: 0,
       }}>
-        <div style={{ textAlign: 'center', animation: `curtainVectorText ${duration}ms ease forwards` }}>
+        {/* Fine vertical line above */}
+        <div style={{
+          width: 1, height: 52,
+          background: 'rgba(255,255,255,0.12)',
+          marginBottom: 32,
+          opacity: contentOpacity,
+          transition: `opacity ${contentDuration}ms ease ${contentDelay}ms`,
+        }} />
+
+        <div style={{
+          textAlign: 'center',
+          opacity: contentOpacity,
+          transition: `opacity ${contentDuration}ms ease ${contentDelay}ms`,
+        }}>
+          {/* Crown wordmark */}
           <div style={{
             fontFamily: 'Syne, sans-serif', fontWeight: 800,
-            fontSize: 28, letterSpacing: '0.28em',
-            color: 'rgba(255,255,255,0.88)', textTransform: 'uppercase', lineHeight: 1,
+            fontSize: 32, letterSpacing: '0.36em',
+            color: 'rgba(255,255,255,0.90)', textTransform: 'uppercase',
+            lineHeight: 1,
           }}>
-            {brandName} {product.label}
+            {brandName}
+          </div>
+
+          {/* Thin ruled separator */}
+          <div style={{
+            width: '100%', height: '0.5px',
+            background: 'rgba(255,255,255,0.14)',
+            margin: '16px 0',
+          }} />
+
+          <div style={{
+            fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
+            fontSize: 10, letterSpacing: '0.30em',
+            color: 'rgba(255,255,255,0.40)', textTransform: 'uppercase',
+          }}>
+            {product.label}
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
-            fontSize: 10, letterSpacing: '0.22em',
-            color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginTop: 10,
+            fontSize: 9, letterSpacing: '0.22em',
+            color: 'rgba(255,255,255,0.20)', textTransform: 'uppercase',
+            marginTop: 10,
           }}>
             {product.tagline}
           </div>
         </div>
+
+        {/* Fine vertical line below */}
+        <div style={{
+          width: 1, height: 52,
+          background: 'rgba(255,255,255,0.12)',
+          marginTop: 32,
+          opacity: contentOpacity,
+          transition: `opacity ${contentDuration}ms ease ${contentDelay}ms`,
+        }} />
       </div>
     </div>
   )
@@ -131,10 +279,20 @@ export default function FashionViewer({ useCase, onBack }) {
   const [isTourMode, setIsTourMode]           = useState(false)
   const [modal, setModal]                     = useState(null)
   const [transition, setTransition]           = useState(null)
+  // transition = { product, expectedPath, isInitial } | null
 
-  /* ── Trigger entry transition on mount ── */
+  // Path of the model that ModelCanvas has reported as normalized and ready.
+  // The curtain only unlocks when this matches transition.expectedPath.
+  const [modelReadyPath, setModelReadyPath] = useState(null)
+
+  /* ── Trigger initial entry curtain on mount ── */
   useEffect(() => {
-    if (activeProduct) setTransition({ product: activeProduct })
+    const product  = products[0] || null
+    if (!product) return
+    const colorway     = product.colorways[0] || null
+    const expectedPath = colorway?.path || product.model
+    setModelReadyPath(null)
+    setTransition({ product, expectedPath, isInitial: true })
   }, [])
 
   const hotspots     = activeProduct?.hotspots || []
@@ -142,6 +300,11 @@ export default function FashionViewer({ useCase, onBack }) {
   const hotspotIndex = hotspots.findIndex(h => h.id === activeHotspotId)
   const modelPath    = activeColorway?.path || activeProduct?.model
   const modalOpen    = modal !== null
+
+  /* ── ModelCanvas readiness callback ── */
+  function handleModelReady(readyPath) {
+    setModelReadyPath(readyPath)
+  }
 
   /* ── Navigate to a specific hotspot ── */
   function goToHotspot(hotspot) {
@@ -169,11 +332,15 @@ export default function FashionViewer({ useCase, onBack }) {
   function handleProductSelect(product) {
     if (product.id === activeProduct?.id) return
     if (isTourMode) endTour()
+    const colorway     = product.colorways[0] || null
+    const expectedPath = colorway?.path || product.model
     setActiveProduct(product)
-    setActiveColorway(product.colorways[0] || null)
+    setActiveColorway(colorway)
     setActivePanel(null)
     closeHotspot()
-    setTransition({ product })
+    // Reset readiness and start the new transition in the same batch.
+    setModelReadyPath(null)
+    setTransition({ product, expectedPath, isInitial: false })
   }
 
   /* ── Floating control presses ── */
@@ -323,6 +490,7 @@ export default function FashionViewer({ useCase, onBack }) {
           showHotspots={!modalOpen}
           autoRotate={selectedHotspot === null && activePanel !== 'colors'}
           focusCamera={focusCamera}
+          onModelReady={handleModelReady}
         />
 
         {/* Floating hotspot card — product remains visible */}
@@ -338,7 +506,7 @@ export default function FashionViewer({ useCase, onBack }) {
           />
         )}
 
-        {/* COLORWAYS panel — floats centered, right of left controls */}
+        {/* COLORWAYS panel */}
         {activePanel === 'colors' && !modalOpen && colorways.length > 0 && (
           <div style={{
             position: 'absolute', bottom: '16%', left: '50%',
@@ -390,7 +558,7 @@ export default function FashionViewer({ useCase, onBack }) {
           </div>
         )}
 
-        {/* Editorial brand text — bottom-left watermark */}
+        {/* Editorial brand watermark — bottom-left */}
         <div style={{
           position: 'absolute', bottom: 28, left: 28,
           pointerEvents: 'none', zIndex: 10,
@@ -411,7 +579,7 @@ export default function FashionViewer({ useCase, onBack }) {
           </div>
         </div>
 
-        {/* ── LEFT INTERACTION ZONE — vertical floating controls ── */}
+        {/* ── LEFT INTERACTION ZONE ── */}
         {!selectedHotspot && (
           <div style={{
             position: 'absolute', left: 24, bottom: '18%',
@@ -439,10 +607,12 @@ export default function FashionViewer({ useCase, onBack }) {
           </div>
         )}
 
-        {/* Product-entry curtain — opaque branded reveal, fully removed after animation */}
+        {/* Product-entry curtain — synchronized with model readiness */}
         {transition && (
           <ProductEntryCurtain
             product={transition.product}
+            isInitial={transition.isInitial}
+            modelReady={modelReadyPath === transition.expectedPath}
             onComplete={() => setTransition(null)}
           />
         )}

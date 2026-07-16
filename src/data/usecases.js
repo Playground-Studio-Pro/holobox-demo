@@ -67,7 +67,7 @@ export const USE_CASES = [
       {
         id: 'watch',
         label: 'Luxury Watch',
-        tagline: 'PRECISION IN MOTION',
+        tagline: 'THE ART OF PRECISION',
         brand: { name: 'Rolex' },
         theme: { accentColor: 'rgba(15,15,20,0.92)', motionSpeed: 'slow' },
         model: '/models/aero-watch.glb',

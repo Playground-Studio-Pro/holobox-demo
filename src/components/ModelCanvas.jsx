@@ -42,13 +42,19 @@ function HotspotPin({ hotspot, isActive, onSelect }) {
 // original is never touched. This component is given key={modelPath} by its
 // parent so it remounts cleanly on every path change, producing a fresh clone.
 //
-function Model({ path }) {
+// onReady(path) is called once normalization is complete so the parent
+// can synchronize a product-entry curtain with actual model readiness.
+function Model({ path, onReady }) {
   const gltf        = useGLTF(path)
   const { invalidate } = useThree()
 
   // Clone once per mount. Because this component is keyed by path, it remounts
   // whenever the path changes, so useMemo always runs on a fresh instance.
   const model = useMemo(() => gltf.scene.clone(true), [gltf.scene])
+
+  // Keep a stable ref so the callback never appears in effect deps.
+  const onReadyRef = useRef(onReady)
+  useEffect(() => { onReadyRef.current = onReady })
 
   useEffect(() => {
     // Reset transforms before measuring — defensive against any root-level
@@ -62,12 +68,13 @@ function Model({ path }) {
     const center = box.getCenter(new THREE.Vector3())
     const size   = box.getSize(new THREE.Vector3())
     const maxDim = Math.max(size.x, size.y, size.z)
-    if (maxDim === 0) return
+    if (maxDim === 0) { onReadyRef.current?.(path); return }
     const scale = 1.8 / maxDim
     model.scale.setScalar(scale)
     model.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
     invalidate()
-  }, [model, invalidate])
+    onReadyRef.current?.(path)
+  }, [model, invalidate, path])
 
   // dispose={null} — clone shares geometry/materials with the cached scene;
   // disposing them here would corrupt the shared resources.
@@ -195,11 +202,16 @@ export default function ModelCanvas({
   hotspots, onHotspotSelect, activeHotspotId,
   showHotspots, autoRotate = true,
   focusCamera = null,
+  onModelReady = null,
 }) {
   const [modelExists, setModelExists] = useState(false)
   const [checked, setChecked]         = useState(false)
   const [isCameraTransitioning, setIsCameraTransitioning] = useState(false)
   const orbitRef = useRef()
+
+  // Stable ref so fetch callbacks always call the current version of onModelReady.
+  const onModelReadyRef = useRef(onModelReady)
+  useEffect(() => { onModelReadyRef.current = onModelReady }, [onModelReady])
 
   useEffect(() => {
     // Reset on every path change so a stale modelExists from the previous
@@ -211,8 +223,21 @@ export default function ModelCanvas({
 
     let stale = false
     fetch(modelPath, { method: 'HEAD' })
-      .then(r  => { if (!stale) { setModelExists(r.ok); setChecked(true) } })
-      .catch(() => { if (!stale) { setModelExists(false); setChecked(true) } })
+      .then(r  => {
+        if (!stale) {
+          setModelExists(r.ok)
+          setChecked(true)
+          // Placeholder is immediately ready — no Model component will report.
+          if (!r.ok) onModelReadyRef.current?.(modelPath)
+        }
+      })
+      .catch(() => {
+        if (!stale) {
+          setModelExists(false)
+          setChecked(true)
+          onModelReadyRef.current?.(modelPath)
+        }
+      })
     return () => { stale = true }
   }, [modelPath])
 
@@ -243,7 +268,7 @@ export default function ModelCanvas({
 
         <Suspense fallback={null}>
           {modelExists
-            ? <Model key={modelPath} path={modelPath} />
+            ? <Model key={modelPath} path={modelPath} onReady={onModelReady} />
             : <PlaceholderModel color={placeholderColor} />
           }
         </Suspense>

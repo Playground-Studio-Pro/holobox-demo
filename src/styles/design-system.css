@@ -334,36 +334,6 @@ body {
   pointer-events: none;
 }
 
-/* ── Fashion product entry curtains ── */
-
-/* Runner: energetic wipe — slides down over screen, then wipes off to bottom */
-@keyframes curtainRunner {
-  0%   { transform: translateY(-100%); }
-  28%  { transform: translateY(0); }
-  68%  { transform: translateY(0); }
-  100% { transform: translateY(100%); }
-}
-
-@keyframes curtainRunnerText {
-  0%   { opacity: 0; transform: translateY(14px); }
-  32%  { opacity: 1; transform: translateY(0); }
-  62%  { opacity: 1; transform: translateY(0); }
-  82%  { opacity: 0; transform: translateY(-10px); }
-  100% { opacity: 0; }
-}
-
-/* Vector: premium fade — precise reveal, soft exit */
-@keyframes curtainVector {
-  0%   { opacity: 0; }
-  22%  { opacity: 1; }
-  68%  { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-@keyframes curtainVectorText {
-  0%   { opacity: 0; transform: scale(0.96) translateY(6px); }
-  30%  { opacity: 1; transform: scale(1) translateY(0); }
-  65%  { opacity: 1; transform: scale(1) translateY(0); }
-  85%  { opacity: 0; transform: scale(1.02) translateY(-4px); }
-  100% { opacity: 0; }
-}
+/* ── Fashion product entry curtains ──
+   Curtain animations are CSS-transition-driven from FashionViewer state.
+   No keyframes needed — enter/exit are triggered by hasEntered + exiting flags. */
