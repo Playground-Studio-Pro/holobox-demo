@@ -103,3 +103,41 @@ Temporary transitions may use opaque masks but disappear completely.
 Left-side floating controls.
 
 2-meter touchscreen optimized.
+
+## Multi-Part Product Configuration
+
+Some products consist of many independent GLB files assembled at runtime
+rather than a single monolithic model (e.g. the Ferrari F2007, which has
+21 part files).
+
+Configuration pattern in `src/data/<product>.js`:
+
+```js
+export const PRODUCT = {
+  id: 'ferrari-f2007',
+  label: 'Ferrari F2007',
+  basePath: '/models/automotive/ferrari-f2007/',
+  parts: {
+    body:       ['FerrariF2007_BODY5_HI.glb', 'FerrariF2007_BODY6_HI.glb'],
+    aero:       ['FerrariF2007_FWING.glb', 'FerrariF2007_RWING.glb'],
+    tires:      ['FerrariF2007_TireFL.glb', 'FerrariF2007_TireFR.glb',
+                 'FerrariF2007_TireRL.glb', 'FerrariF2007_TireRR.glb'],
+    suspension: ['FerrariF2007_SuspFL.glb', 'FerrariF2007_SuspFR.glb',
+                 'FerrariF2007_SuspRL.glb', 'FerrariF2007_SuspRR.glb'],
+    brakes:     ['FerrariF2007_BrakeFL.glb', 'FerrariF2007_BrakeFR.glb',
+                 'FerrariF2007_BrakeRL.glb', 'FerrariF2007_BrakeRR.glb'],
+    covers:     ['FerrariF2007_RCoverFL.glb', 'FerrariF2007_RCoverFR.glb',
+                 'FerrariF2007_RCoverRL.glb', 'FerrariF2007_RCoverRR.glb'],
+    steering:   ['FerrariF2007_Swheel.glb'],
+  },
+}
+```
+
+The viewer for multi-part products will load each GLB independently and
+position parts in the same coordinate space. This allows selective
+show/hide per group (e.g. hide covers to reveal brakes) without
+re-loading files already in cache.
+
+No viewer has been built for this format yet. The data files establish
+the naming contract so the viewer can be implemented against a stable
+manifest.

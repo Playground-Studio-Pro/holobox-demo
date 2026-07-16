@@ -85,3 +85,45 @@ The platform itself is completely brand-agnostic.
 
 Any client brand should be able to replace these assets without changing
 the underlying architecture.
+
+## Branding Surfaces
+
+Every branded experience defines explicit surfaces where brand identity
+appears.
+
+**Entry / Product Header** — brand logo or wordmark, product name, tagline,
+product family.
+
+**Viewer Environment** — background treatment, interface color palette,
+typography, overlays, labels, branded microcopy.
+
+**Product Navigation** — multiple products within the same brand universe,
+product switcher, variant or colorway switcher.
+
+**Product Information** — branded tone of voice, product-specific technology
+language, technical storytelling.
+
+**More / Mobile Handoff** — branded QR, product landing page, CTA, brand URL,
+product URL.
+
+**Optional Media** — guided tour, product film, campaign content.
+
+## Per-Product Modules
+
+Not all products expose the same modules. Add a module only when it creates
+meaningful value for that product.
+
+```
+Sneaker   — hotspots · guided focus · hotspot next/prev · colorways · More/QR
+Watch     — hotspots · guided focus · variants · More/QR
+Engine    — hotspots · guided focus · exploded view · deep zoom · More/QR
+Education — hotspots · mega zoom · guided focus
+```
+
+## Do Not Build
+
+Do not build until a use case proves the need:
+
+backend · CMS · authentication · analytics platform · AI · live connection ·
+falso vivo · kiosk · hotspot editor · universal theme engine · multi-tenant
+platform
