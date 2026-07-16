@@ -6,14 +6,12 @@ export const USE_CASES = [
     sub: 'Sneakers · Watches · Apparel',
     color: '#f0ede8',
     placeholderColor: '#c8b8a8',
-    brand: {
-      name: 'AERO/01',
-    },
     products: [
       {
         id: 'runner',
-        label: 'Performance Runner',
+        label: 'Performance Sneaker',
         tagline: 'ENGINEERED FOR MOVEMENT',
+        brand: { name: 'Nike' },
         theme: { accentColor: 'rgba(0,0,0,0.88)', motionSpeed: 'fast' },
         model: '/models/nike-shoe.glb',
         colorways: [
@@ -60,16 +58,17 @@ export const USE_CASES = [
           },
         ],
         more: {
-          url: 'aero01.com/performance-runner',
+          url: 'nike.com/performance-sneaker',
           technologies: ['Adaptive Lockdown', 'Engineered Performance Upper', 'Responsive Cushioning', 'High-Traction Outsole'],
           primaryCta:   { label: 'Explore the Product' },
-          secondaryCta: { label: 'Visit Brand' },
+          secondaryCta: { label: 'Visit Nike' },
         },
       },
       {
         id: 'watch',
-        label: 'VECTOR',
+        label: 'Luxury Watch',
         tagline: 'PRECISION IN MOTION',
+        brand: { name: 'Rolex' },
         theme: { accentColor: 'rgba(15,15,20,0.92)', motionSpeed: 'slow' },
         model: '/models/aero-watch.glb',
         colorways: [],
@@ -112,10 +111,10 @@ export const USE_CASES = [
           },
         ],
         more: {
-          url: 'aero01.com/vector',
+          url: 'rolex.com/luxury-watch',
           technologies: ['Case Construction', 'Crown / Controls', 'Dial / Display', 'Strap / Material'],
-          primaryCta:   { label: 'Explore VECTOR' },
-          secondaryCta: { label: 'Visit Brand' },
+          primaryCta:   { label: 'Explore the Watch' },
+          secondaryCta: { label: 'Visit Rolex' },
         },
       },
     ],

@@ -34,9 +34,30 @@ Read this file before every task.
 
 Do not hardcode product content into shared components.
 
-Brand data belongs in configuration.
+Brand data belongs in configuration (usecases.js), not in viewer code.
+
+Demo branding must be configuration-driven. Nike and Rolex are demo
+assets defined in usecases.js. The viewer components (FashionViewer,
+ModelCanvas, Modal) must read brand from product data — never from
+hardcoded strings.
 
 Reuse camera states for: - hotspot focus - next/previous - guided tour
+
+## GLB Scene Rule
+
+Never mutate the scene object returned by useGLTF directly.
+
+useGLTF caches scene objects by URL. If scene.scale, scene.position, or
+scene.rotation are modified on the cached object, the second visit to
+the same model receives an already-transformed scene. Measuring a
+pre-scaled scene produces a compounding (wrong) transform — the model
+disappears or becomes miniature.
+
+Always clone the scene before applying any transforms:
+
+    const model = useMemo(() => gltf.scene.clone(true), [gltf.scene])
+
+Normalize only the clone. Never touch gltf.scene.
 
 ## Workflow
 
@@ -48,18 +69,19 @@ Reuse camera states for: - hotspot focus - next/previous - guided tour
 6.  Build.
 7.  Summarize changes.
 
-# Demo Assets
+## Demo Assets
 
-Current demonstration products use recognizable consumer products to showcase the platform's capabilities.
+Current demonstration products use recognizable consumer brands to
+showcase the platform's capabilities.
 
 Current demo set:
 
 - Nike Performance Sneaker
-- Rolex Watch
+- Rolex Luxury Watch
 
 These brands are demonstration assets only.
 
 The platform itself is completely brand-agnostic.
 
-Any client brand should be able to replace these assets without changing the underlying architecture.
-
+Any client brand should be able to replace these assets without changing
+the underlying architecture.

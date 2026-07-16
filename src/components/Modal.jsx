@@ -213,7 +213,7 @@ export default function Modal({ open, onClose, type, useCase, product }) {
     info:         'Sobre este Demo',
     video:        'Video',
     landing:      'Landing Page',
-    'fashion-more': useCase?.brand?.name || 'More',
+    'fashion-more': product?.brand?.name || 'More',
   }
 
   return (
@@ -268,7 +268,7 @@ export default function Modal({ open, onClose, type, useCase, product }) {
         {type === 'info'         && <InfoContent useCase={useCase} />}
         {type === 'video'        && <VideoContent useCase={useCase} />}
         {type === 'landing'      && <LandingContent useCase={useCase} />}
-        {type === 'fashion-more' && <FashionMoreContent brand={useCase?.brand} product={product} />}
+        {type === 'fashion-more' && <FashionMoreContent brand={product?.brand} product={product} />}
       </div>
     </div>
   )

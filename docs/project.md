@@ -31,11 +31,20 @@ The software never replaces the physical stage.
 
 Permanent viewer background is transparent.
 
-## Current Brand
+## Current Demo Brands
 
-AERO/01
+The platform is brand-agnostic. The following are demonstration assets
+used to help clients immediately understand how the Product Explorer
+adapts to recognizable brand identities.
 
-Products: - Performance Runner - VECTOR
+Nike
+- Performance Sneaker
+
+Rolex
+- Luxury Watch
+
+Any client brand can replace these assets without changing the shared
+viewer architecture. Brand data lives entirely in configuration.
 
 ## Current Goal
 

@@ -1,6 +1,6 @@
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { useGLTF, OrbitControls, Html } from '@react-three/drei'
-import { Suspense, useRef, useEffect, useState } from 'react'
+import { Suspense, useRef, useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 
 const HERO_POSITION = [0, 0.3, 3.5]
@@ -32,38 +32,46 @@ function HotspotPin({ hotspot, isActive, onSelect }) {
   )
 }
 
-// useGLTF caches scene objects by URL. When the user switches products and
-// returns, the same (already-normalized) scene object is handed back from
-// cache. The normalization effect re-runs because the `scene` reference
-// changes (sceneB → sceneA), and measuring Box3 on an already-scaled scene
-// produces a compounding transform (scale resets to 1 → model wrong size).
-// Storing original bounds per scene object makes normalization idempotent.
-const _sceneBounds = new WeakMap()
-
 /* ── GLB model with auto-center/scale ── */
+//
+// useGLTF caches the scene object by URL. Mutating that scene directly
+// (scale, position) causes the second visit to measure an already-normalized
+// scene and compound the transform — the model disappears or goes miniature.
+//
+// Fix: clone the cached scene before applying any transforms. The cached
+// original is never touched. This component is given key={modelPath} by its
+// parent so it remounts cleanly on every path change, producing a fresh clone.
+//
 function Model({ path }) {
-  const { scene } = useGLTF(path)
+  const gltf        = useGLTF(path)
   const { invalidate } = useThree()
 
+  // Clone once per mount. Because this component is keyed by path, it remounts
+  // whenever the path changes, so useMemo always runs on a fresh instance.
+  const model = useMemo(() => gltf.scene.clone(true), [gltf.scene])
+
   useEffect(() => {
-    if (!scene) return
-    if (!_sceneBounds.has(scene)) {
-      const box = new THREE.Box3().setFromObject(scene)
-      _sceneBounds.set(scene, {
-        center: box.getCenter(new THREE.Vector3()),
-        size:   box.getSize(new THREE.Vector3()),
-      })
-    }
-    const { center, size } = _sceneBounds.get(scene)
+    // Reset transforms before measuring — defensive against any root-level
+    // transforms the GLB exporter may have embedded.
+    model.position.set(0, 0, 0)
+    model.rotation.set(0, 0, 0)
+    model.scale.set(1, 1, 1)
+    model.updateMatrixWorld(true)
+
+    const box    = new THREE.Box3().setFromObject(model)
+    const center = box.getCenter(new THREE.Vector3())
+    const size   = box.getSize(new THREE.Vector3())
     const maxDim = Math.max(size.x, size.y, size.z)
     if (maxDim === 0) return
     const scale = 1.8 / maxDim
-    scene.scale.setScalar(scale)
-    scene.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
+    model.scale.setScalar(scale)
+    model.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
     invalidate()
-  }, [scene, invalidate])
+  }, [model, invalidate])
 
-  return <primitive object={scene} dispose={null} />
+  // dispose={null} — clone shares geometry/materials with the cached scene;
+  // disposing them here would corrupt the shared resources.
+  return <primitive object={model} dispose={null} />
 }
 
 /* ── Placeholder box ── */
@@ -189,15 +197,23 @@ export default function ModelCanvas({
   focusCamera = null,
 }) {
   const [modelExists, setModelExists] = useState(false)
-  const [checked, setChecked] = useState(false)
+  const [checked, setChecked]         = useState(false)
   const [isCameraTransitioning, setIsCameraTransitioning] = useState(false)
   const orbitRef = useRef()
 
   useEffect(() => {
+    // Reset on every path change so a stale modelExists from the previous
+    // product is never used for the incoming one.
+    setChecked(false)
+    setModelExists(false)
+
     if (!modelPath) { setChecked(true); return }
+
+    let stale = false
     fetch(modelPath, { method: 'HEAD' })
-      .then(r => { setModelExists(r.ok); setChecked(true) })
-      .catch(() => { setModelExists(false); setChecked(true) })
+      .then(r  => { if (!stale) { setModelExists(r.ok); setChecked(true) } })
+      .catch(() => { if (!stale) { setModelExists(false); setChecked(true) } })
+    return () => { stale = true }
   }, [modelPath])
 
   function handleZoomIn()  { orbitRef.current?.dollyOut(1.25); orbitRef.current?.update() }
@@ -227,7 +243,7 @@ export default function ModelCanvas({
 
         <Suspense fallback={null}>
           {modelExists
-            ? <Model path={modelPath} />
+            ? <Model key={modelPath} path={modelPath} />
             : <PlaceholderModel color={placeholderColor} />
           }
         </Suspense>

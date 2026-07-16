@@ -41,9 +41,10 @@ function FashionControlBtn({ label, active, onPress }) {
 }
 
 /* ── Branded product-entry curtain — opaque, temporary, fully removed after animation ── */
-function ProductEntryCurtain({ product, brand, onComplete }) {
-  const isRunner = product.id === 'runner'
-  const duration = isRunner ? 1300 : 1900
+function ProductEntryCurtain({ product, onComplete }) {
+  const isRunner  = product.id === 'runner'
+  const duration  = isRunner ? 1300 : 1900
+  const brandName = product.brand?.name || ''
 
   useEffect(() => {
     const t = setTimeout(onComplete, duration)
@@ -66,7 +67,7 @@ function ProductEntryCurtain({ product, brand, onComplete }) {
               fontSize: 42, letterSpacing: '0.20em',
               color: 'rgba(0,0,0,0.85)', textTransform: 'uppercase', lineHeight: 1,
             }}>
-              {brand.name}
+              {brandName}
             </div>
             <div style={{
               fontFamily: 'Syne, sans-serif', fontWeight: 600,
@@ -103,7 +104,7 @@ function ProductEntryCurtain({ product, brand, onComplete }) {
             fontSize: 28, letterSpacing: '0.28em',
             color: 'rgba(255,255,255,0.88)', textTransform: 'uppercase', lineHeight: 1,
           }}>
-            {brand.name} {product.label}
+            {brandName} {product.label}
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif', fontWeight: 300,
@@ -119,7 +120,6 @@ function ProductEntryCurtain({ product, brand, onComplete }) {
 }
 
 export default function FashionViewer({ useCase, onBack }) {
-  const brand    = useCase.brand
   const products = useCase.products || []
 
   const [activeProduct, setActiveProduct]     = useState(products[0] || null)
@@ -266,7 +266,7 @@ export default function FashionViewer({ useCase, onBack }) {
               letterSpacing: '0.16em', color: 'rgba(0,0,0,0.88)',
               lineHeight: 1,
             }}>
-              {brand.name}
+              {activeProduct?.brand?.name}
             </div>
             <div style={{
               fontFamily: 'DM Sans, sans-serif', fontWeight: 400, fontSize: 10,
@@ -400,7 +400,7 @@ export default function FashionViewer({ useCase, onBack }) {
             letterSpacing: '0.20em', color: 'rgba(0,0,0,0.20)',
             textTransform: 'uppercase', lineHeight: 1, marginBottom: 4,
           }}>
-            {brand.name}
+            {activeProduct?.brand?.name}
           </div>
           <div style={{
             fontFamily: 'DM Sans, sans-serif', fontWeight: 300, fontSize: 9,
@@ -443,7 +443,6 @@ export default function FashionViewer({ useCase, onBack }) {
         {transition && (
           <ProductEntryCurtain
             product={transition.product}
-            brand={brand}
             onComplete={() => setTransition(null)}
           />
         )}
