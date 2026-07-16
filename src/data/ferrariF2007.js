@@ -42,3 +42,15 @@ export const FERRARI_F2007 = {
     ],
   },
 }
+
+// Flat parts list for MultiPartModel — generic format { id, label, path, group, defaultVisible }
+export const FERRARI_F2007_PARTS = Object.entries(FERRARI_F2007.parts).flatMap(
+  ([group, paths]) =>
+    paths.map((path, i) => ({
+      id: `${group}_${i}`,
+      label: path.split('/').pop().replace('.glb', ''),
+      path,
+      group,
+      defaultVisible: true,
+    }))
+)

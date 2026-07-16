@@ -1,3 +1,5 @@
+import { FERRARI_F2007_PARTS } from './ferrariF2007.js'
+
 export const USE_CASES = [
   {
     id: 'fashion',
@@ -124,9 +126,9 @@ export const USE_CASES = [
     label: 'Manufactura',
     emoji: '⚙️',
     sub: 'Engine · Turbine · Machinery',
-    model: '/models/engine.glb',
     color: '#e8edf0',
     placeholderColor: '#8a9aaa',
+    parts: FERRARI_F2007_PARTS,
   },
   {
     id: 'drinks',

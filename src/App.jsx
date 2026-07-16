@@ -3,6 +3,7 @@ import Welcome from './screens/Welcome.jsx'
 import Menu from './screens/Menu.jsx'
 import Viewer from './screens/Viewer.jsx'
 import FashionViewer from './screens/FashionViewer.jsx'
+import MultiPartViewer from './screens/MultiPartViewer.jsx'
 
 export default function App() {
   const [screen, setScreen] = useState('welcome')
@@ -12,6 +13,8 @@ export default function App() {
     setSelectedUseCase(uc)
     setScreen('viewer')
   }
+
+  const id = selectedUseCase?.id
 
   return (
     <div className="app">
@@ -24,13 +27,19 @@ export default function App() {
           onSelect={handleSelectUseCase}
         />
       )}
-      {screen === 'viewer' && selectedUseCase?.id === 'fashion' && (
+      {screen === 'viewer' && id === 'fashion' && (
         <FashionViewer
           useCase={selectedUseCase}
           onBack={() => setScreen('menu')}
         />
       )}
-      {screen === 'viewer' && selectedUseCase && selectedUseCase.id !== 'fashion' && (
+      {screen === 'viewer' && id === 'manufactura' && (
+        <MultiPartViewer
+          useCase={selectedUseCase}
+          onBack={() => setScreen('menu')}
+        />
+      )}
+      {screen === 'viewer' && selectedUseCase && id !== 'fashion' && id !== 'manufactura' && (
         <Viewer
           useCase={selectedUseCase}
           onBack={() => setScreen('menu')}
