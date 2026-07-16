@@ -32,6 +32,14 @@ function HotspotPin({ hotspot, isActive, onSelect }) {
   )
 }
 
+// useGLTF caches scene objects by URL. When the user switches products and
+// returns, the same (already-normalized) scene object is handed back from
+// cache. The normalization effect re-runs because the `scene` reference
+// changes (sceneB → sceneA), and measuring Box3 on an already-scaled scene
+// produces a compounding transform (scale resets to 1 → model wrong size).
+// Storing original bounds per scene object makes normalization idempotent.
+const _sceneBounds = new WeakMap()
+
 /* ── GLB model with auto-center/scale ── */
 function Model({ path }) {
   const { scene } = useGLTF(path)
@@ -39,9 +47,14 @@ function Model({ path }) {
 
   useEffect(() => {
     if (!scene) return
-    const box = new THREE.Box3().setFromObject(scene)
-    const center = box.getCenter(new THREE.Vector3())
-    const size = box.getSize(new THREE.Vector3())
+    if (!_sceneBounds.has(scene)) {
+      const box = new THREE.Box3().setFromObject(scene)
+      _sceneBounds.set(scene, {
+        center: box.getCenter(new THREE.Vector3()),
+        size:   box.getSize(new THREE.Vector3()),
+      })
+    }
+    const { center, size } = _sceneBounds.get(scene)
     const maxDim = Math.max(size.x, size.y, size.z)
     if (maxDim === 0) return
     const scale = 1.8 / maxDim

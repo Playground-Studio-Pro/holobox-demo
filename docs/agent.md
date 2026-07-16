@@ -47,3 +47,19 @@ Reuse camera states for: - hotspot focus - next/previous - guided tour
 5.  Implement.
 6.  Build.
 7.  Summarize changes.
+
+# Demo Assets
+
+Current demonstration products use recognizable consumer products to showcase the platform's capabilities.
+
+Current demo set:
+
+- Nike Performance Sneaker
+- Rolex Watch
+
+These brands are demonstration assets only.
+
+The platform itself is completely brand-agnostic.
+
+Any client brand should be able to replace these assets without changing the underlying architecture.
+
