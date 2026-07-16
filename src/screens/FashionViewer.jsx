@@ -4,6 +4,40 @@ import ModelCanvas from '../components/ModelCanvas.jsx'
 import HotspotCard from '../components/HotspotCard.jsx'
 import Modal from '../components/Modal.jsx'
 
+/*
+ * ── BrandLogo ──
+ * Renders the brand logo image when brand.logo is configured.
+ * Falls back to the brand name text if the path is missing or the image fails.
+ * Replace /public/brands/ SVG placeholders with real PNG assets at any time
+ * by updating brand.logo in usecases.js — no viewer code changes needed.
+ */
+function BrandLogo({ brand }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  if (!brand?.logo || imgFailed) {
+    return (
+      <div style={{
+        fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 20,
+        letterSpacing: '0.16em', color: 'rgba(0,0,0,0.88)',
+        lineHeight: 1,
+      }}>
+        {brand?.name}
+      </div>
+    )
+  }
+  return (
+    <img
+      src={brand.logo}
+      alt={brand.logoAlt || brand.name}
+      onError={() => setImgFailed(true)}
+      style={{
+        maxWidth: 120, maxHeight: 32,
+        objectFit: 'contain', objectPosition: 'right center',
+        display: 'block',
+      }}
+    />
+  )
+}
+
 /* ── Floating control button ── */
 function FashionControlBtn({ label, active, onPress }) {
   return (
@@ -65,14 +99,19 @@ function ProductEntryCurtain({ product, isInitial, modelReady, onComplete }) {
   const brandName = product.brand?.name || ''
 
   // Per-brand timing constants (ms)
-  const ENTER_MS    = isNike ? 260  : 440
-  const EXIT_MS     = isNike ? 380  : 520
+  // Total curtain duration ≈ MIN_HOLD_MS + EXIT_MS (when model loads fast).
+  // Nike initial: 640+380=1020ms ✓ (target 900–1100)
+  // Nike switch:  340+380= 720ms ✓ (target 650–800)
+  // Rolex initial: 780+520=1300ms ✓ (target 1200–1400)
+  // Rolex switch:  420+520= 940ms ✓ (target 850–1000)
+  const ENTER_MS    = isNike ? 260 : 440
+  const EXIT_MS     = isNike ? 380 : 520
   const MIN_HOLD_MS = isInitial
-    ? (isNike ? 1000 : 1300)
-    : (isNike ?  720 :  920)
+    ? (isNike ? 640 : 780)
+    : (isNike ? 340 : 420)
   const SAFETY_MS   = isInitial
-    ? (isNike ? 2800 : 3500)
-    : (isNike ? 2000 : 2800)
+    ? (isNike ? 1800 : 2200)
+    : (isNike ? 1400 : 1800)
 
   const [hasEntered,  setHasEntered]  = useState(false)
   const [minHoldDone, setMinHoldDone] = useState(false)
@@ -113,12 +152,18 @@ function ProductEntryCurtain({ product, isInitial, modelReady, onComplete }) {
 
   // ── Nike curtain — energetic directional wipe ──
   if (isNike) {
+    // On product switches the curtain must cover the screen from frame 0 — no
+    // slide-in gap. For initial entry only, the wipe-in animation plays via rAF.
     const slideY = exiting
       ? 'translateY(110%)'
-      : hasEntered
+      : (!isInitial || hasEntered)
       ? 'translateY(0%)'
       : 'translateY(-100%)'
-    const slideTransition = `transform ${exiting ? EXIT_MS : ENTER_MS}ms cubic-bezier(0.76, 0, 0.24, 1)`
+    const slideTransition = exiting
+      ? `transform ${EXIT_MS}ms cubic-bezier(0.76, 0, 0.24, 1)`
+      : (isInitial && hasEntered)
+      ? `transform ${ENTER_MS}ms cubic-bezier(0.76, 0, 0.24, 1)`
+      : 'none'
 
     const textVisible  = hasEntered && !exiting
     const textOpacity  = textVisible ? 1 : 0
@@ -185,11 +230,16 @@ function ProductEntryCurtain({ product, isInitial, modelReady, onComplete }) {
   }
 
   // ── Rolex curtain — restrained premium fade ──
-  const fadeOpacity  = exiting ? 0 : hasEntered ? 1 : 0
-  const fadeTransition = `opacity ${exiting ? EXIT_MS : ENTER_MS}ms ${exiting ? 'cubic-bezier(0.4,0,1,1)' : 'cubic-bezier(0,0,0.3,1)'}`
+  // The background is immediately opaque on mount (no fade-in) to prevent the
+  // Canvas unmount/remount cycle from showing through a semi-transparent overlay.
+  // Only the exit fades; content (text, lines) still animates via contentOpacity.
+  const fadeOpacity    = exiting ? 0 : 1
+  const fadeTransition = exiting ? `opacity ${EXIT_MS}ms cubic-bezier(0.4,0,1,1)` : 'none'
 
-  const contentDelay    = exiting ? 0 : Math.round(ENTER_MS * 0.45)
-  const contentDuration = exiting ? 220 : 380
+  // On product switches, content appears quickly so it's readable before exit.
+  // On initial entry, the elegant delayed reveal plays in full.
+  const contentDelay    = exiting ? 0 : (isInitial ? Math.round(ENTER_MS * 0.45) : 60)
+  const contentDuration = exiting ? 220 : (isInitial ? 380 : 200)
   const contentOpacity  = hasEntered && !exiting ? 1 : 0
 
   return (
@@ -428,13 +478,7 @@ export default function FashionViewer({ useCase, onBack }) {
           </button>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{
-              fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 20,
-              letterSpacing: '0.16em', color: 'rgba(0,0,0,0.88)',
-              lineHeight: 1,
-            }}>
-              {activeProduct?.brand?.name}
-            </div>
+            <BrandLogo brand={activeProduct?.brand} />
             <div style={{
               fontFamily: 'DM Sans, sans-serif', fontWeight: 400, fontSize: 10,
               letterSpacing: '0.14em', textTransform: 'uppercase',

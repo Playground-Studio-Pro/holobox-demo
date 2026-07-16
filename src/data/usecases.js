@@ -11,7 +11,7 @@ export const USE_CASES = [
         id: 'runner',
         label: 'Performance Sneaker',
         tagline: 'ENGINEERED FOR MOVEMENT',
-        brand: { name: 'Nike' },
+        brand: { name: 'Nike', logo: '/brands/nike-logo.svg', logoAlt: 'Nike' },
         theme: { accentColor: 'rgba(0,0,0,0.88)', motionSpeed: 'fast' },
         model: '/models/nike-shoe.glb',
         colorways: [
@@ -68,7 +68,7 @@ export const USE_CASES = [
         id: 'watch',
         label: 'Luxury Watch',
         tagline: 'THE ART OF PRECISION',
-        brand: { name: 'Rolex' },
+        brand: { name: 'Rolex', logo: '/brands/rolex-logo.svg', logoAlt: 'Rolex' },
         theme: { accentColor: 'rgba(15,15,20,0.92)', motionSpeed: 'slow' },
         model: '/models/aero-watch.glb',
         colorways: [],

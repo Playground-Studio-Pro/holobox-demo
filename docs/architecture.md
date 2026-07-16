@@ -81,6 +81,19 @@ This sequence ensures every product switch starts with a clean clone and
 a correct normalization — regardless of how many times the user switches
 between the same products.
 
+## Brand Logo System
+
+`brand` in usecases.js carries three fields: `name`, `logo`, `logoAlt`.
+
+`FashionViewer` renders `<BrandLogo brand={product.brand} />` in the header.
+
+- If `brand.logo` is set, an `<img>` is rendered with `objectFit: contain`, max 120×32px.
+- If the image fails to load (`onError`), the component falls back to `brand.name` text.
+- If `brand.logo` is null/undefined, the text fallback renders immediately.
+
+Placeholder SVG wordmarks live in `/public/brands/`. Replace with real PNGs by
+updating the `logo` path in usecases.js — no viewer code changes required.
+
 ## UX
 
 Permanent transparent viewer.

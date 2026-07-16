@@ -56,7 +56,14 @@ function Model({ path, onReady }) {
   const onReadyRef = useRef(onReady)
   useEffect(() => { onReadyRef.current = onReady })
 
+  // Set by normalization useEffect, consumed by useFrame.
+  // This ensures onReady fires after Three.js has rendered the first frame
+  // with the normalized model — not just after JS normalization completes.
+  const pendingReadyRef = useRef(false)
+
   useEffect(() => {
+    pendingReadyRef.current = false
+
     // Reset transforms before measuring — defensive against any root-level
     // transforms the GLB exporter may have embedded.
     model.position.set(0, 0, 0)
@@ -73,8 +80,15 @@ function Model({ path, onReady }) {
     model.scale.setScalar(scale)
     model.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
     invalidate()
-    onReadyRef.current?.(path)
+    pendingReadyRef.current = true
   }, [model, invalidate, path])
+
+  useFrame(() => {
+    if (pendingReadyRef.current) {
+      pendingReadyRef.current = false
+      onReadyRef.current?.(path)
+    }
+  })
 
   // dispose={null} — clone shares geometry/materials with the cached scene;
   // disposing them here would corrupt the shared resources.
