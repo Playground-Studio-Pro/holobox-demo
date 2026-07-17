@@ -10,12 +10,12 @@ const SECTIONS = [
     title: 'Front Wing',
     description: 'Controls the airflow entering the vehicle and generates front-end downforce.',
     specs: [
-      'Multi-element aerodynamic structure',
+      'Multi-element aerodynamic profile',
       'Directs airflow around the front wheels',
       'Influences balance and cornering response',
     ],
     stat: { label: 'AERODYNAMIC LOAD', value: 'High' },
-    camera: { position: [0, 0.05, 1.8], target: [0, -0.32, 0.55] },
+    camera: { position: [0, 0.0, 1.2], target: [0, -0.32, 0.52] },
   },
   {
     partId: 'aero_1',  // FerrariF2007_RWING.glb
@@ -25,11 +25,25 @@ const SECTIONS = [
     description: 'Generates the majority of rear downforce and stabilizes the car at high speed.',
     specs: [
       'Dual-plane main plane and flap assembly',
-      'Adjustable DRS-compatible geometry',
+      'Adjustable angle of attack per circuit',
       'Works in tandem with the diffuser exit',
     ],
     stat: { label: 'AERODYNAMIC LOAD', value: 'Very High' },
-    camera: { position: [0, 0.55, -2.8], target: [0, 0.15, -0.85] },
+    camera: { position: [0, 0.5, -2.0], target: [0, 0.15, -0.85] },
+  },
+  {
+    partId: 'suspension_0',  // FerrariF2007_SuspFL.glb — front-left corner
+    label: 'Suspension',
+    eyebrow: 'CHASSIS · 03',
+    title: 'Suspension',
+    description: 'Double wishbone geometry controls wheel motion with precision, managing camber and toe under cornering loads.',
+    specs: [
+      'Double wishbone front and rear',
+      'Push-rod actuated inboard dampers',
+      'Carbon fibre composite uprights',
+    ],
+    stat: { label: 'CORNER WEIGHT', value: '≈160kg' },
+    camera: { position: [0.9, 0.1, 1.1], target: [0.15, -0.2, 0.38] },
   },
 ]
 
@@ -128,8 +142,7 @@ export default function MultiPartViewer({ useCase, onBack }) {
               onPress={() => openSection(i)}
             />
           ))}
-          <SectionPill label="SUSPENSION" accent="#888" disabled />
-          <SectionPill label="BRAKES"     accent="#888" disabled />
+          <SectionPill label="BRAKES" accent="#888" disabled />
         </div>
 
         {/* ── Bottom cinema card (focus mode) ────────────────────── */}

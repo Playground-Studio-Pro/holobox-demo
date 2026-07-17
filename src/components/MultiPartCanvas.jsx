@@ -167,7 +167,7 @@ export default function MultiPartCanvas({
         <OrbitControls
           ref={orbitRef}
           enablePan={false}
-          minDistance={2}
+          minDistance={0.6}
           maxDistance={10}
           autoRotate
           autoRotateSpeed={0.5}
