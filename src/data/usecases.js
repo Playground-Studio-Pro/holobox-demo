@@ -155,7 +155,6 @@ export const USE_CASES = [
     visibility: 'hidden',
     debugOnly: true,
     label: 'F2008 Inspector',
-    emoji: '🔬',
     sub: 'Hierarchical GLB · Dev Prototype',
     color: '#eaeaea',
     placeholderColor: '#666',
