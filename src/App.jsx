@@ -3,7 +3,8 @@ import Welcome from './screens/Welcome.jsx'
 import Menu from './screens/Menu.jsx'
 import Viewer from './screens/Viewer.jsx'
 import FashionViewer from './screens/FashionViewer.jsx'
-import MultiPartViewer from './screens/MultiPartViewer.jsx'
+import AutomotiveViewer from './screens/AutomotiveViewer.jsx'
+import F2008PrototypeViewer from './screens/F2008PrototypeViewer.jsx'
 
 export default function App() {
   const [screen, setScreen] = useState('welcome')
@@ -33,13 +34,19 @@ export default function App() {
           onBack={() => setScreen('menu')}
         />
       )}
-      {screen === 'viewer' && id === 'manufactura' && (
-        <MultiPartViewer
+      {screen === 'viewer' && id === 'automotive' && (
+        <AutomotiveViewer
           useCase={selectedUseCase}
           onBack={() => setScreen('menu')}
         />
       )}
-      {screen === 'viewer' && selectedUseCase && id !== 'fashion' && id !== 'manufactura' && (
+      {screen === 'viewer' && id === 'f2008-proto' && (
+        <F2008PrototypeViewer
+          useCase={selectedUseCase}
+          onBack={() => setScreen('menu')}
+        />
+      )}
+      {screen === 'viewer' && selectedUseCase && id !== 'fashion' && id !== 'automotive' && id !== 'f2008-proto' && (
         <Viewer
           useCase={selectedUseCase}
           onBack={() => setScreen('menu')}

@@ -1,5 +1,24 @@
 import { FERRARI_F2007_PARTS } from './ferrariF2007.js'
 
+const BASE_AUTO = '/models/automotive/'
+
+export const AUTOMOTIVE_CARS = [
+  {
+    id: 'ferrari-f2007',
+    label: 'Ferrari F2007',
+    year: '2007',
+    type: 'multipart',
+    parts: FERRARI_F2007_PARTS,
+  },
+  {
+    id: 'ferrari-f2008',
+    label: 'Ferrari F2008',
+    year: '2008',
+    type: 'hierarchical',
+    glb: BASE_AUTO + 'ferrari-f2008/F2008_web_final.glb',
+  },
+]
+
 export const USE_CASES = [
   {
     id: 'fashion',
@@ -122,13 +141,21 @@ export const USE_CASES = [
     ],
   },
   {
-    id: 'manufactura',
-    label: 'Manufactura',
-    emoji: '⚙️',
-    sub: 'Engine · Turbine · Machinery',
+    id: 'automotive',
+    label: 'Automotive',
+    emoji: '🏎️',
+    sub: 'Formula 1 · Supercars · Concept',
     color: '#e8edf0',
     placeholderColor: '#8a9aaa',
-    parts: FERRARI_F2007_PARTS,
+    cars: AUTOMOTIVE_CARS,
+  },
+  {
+    id: 'f2008-proto',
+    label: 'F2008 Inspector',
+    emoji: '🔬',
+    sub: 'Hierarchical GLB · Dev Prototype',
+    color: '#eaeaea',
+    placeholderColor: '#666',
   },
   {
     id: 'drinks',
