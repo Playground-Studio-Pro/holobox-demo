@@ -1,6 +1,6 @@
 import { Suspense, useRef, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF } from '@react-three/drei'
+import { OrbitControls, useGLTF, Environment } from '@react-three/drei'
 import * as THREE from 'three'
 import MultiPartModel from './MultiPartModel.jsx'
 
@@ -44,7 +44,7 @@ function ZoomBtn({ label, onPress }) {
  * props.parts — array of { id, label, path, group, defaultVisible }
  * props.onReady — forwarded to MultiPartModel
  */
-export default function MultiPartCanvas({ parts, onReady }) {
+export default function MultiPartCanvas({ parts, onReady, showEnv = false }) {
   const orbitRef = useRef()
 
   // Kick off all GLB fetches as soon as this component mounts so the files
@@ -72,6 +72,8 @@ export default function MultiPartCanvas({ parts, onReady }) {
         <directionalLight position={[4, 6, 4]}  intensity={1.0} />
         <directionalLight position={[-3, 2, -3]} intensity={0.4} />
         <directionalLight position={[0, -2, 2]}  intensity={0.2} />
+
+        {showEnv && <Environment preset="studio" background={false} />}
 
         <Suspense fallback={null}>
           <MultiPartModel parts={parts} onReady={onReady} />
