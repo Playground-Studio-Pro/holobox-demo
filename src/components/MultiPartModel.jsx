@@ -13,10 +13,13 @@ import * as THREE from 'three'
  * transforms are never modified — they carry the relative positions exported
  * from the source 3D package.
  *
- * props.parts — array of { id, label, path, group, defaultVisible }
- * props.onReady — called after the first frame renders the normalized assembly
+ * props.parts            — array of { id, label, path, group, defaultVisible }
+ * props.onReady          — called after the first frame renders the normalized assembly
+ * props.onAssemblyReady  — called with { [partId]: clone } map after normalization
+ * props.focusPartId      — when set, dims all clones except this one to 10% opacity;
+ *                          when null, restores all to full opacity
  */
-export default function MultiPartModel({ parts, onReady }) {
+export default function MultiPartModel({ parts, onReady, onAssemblyReady, focusPartId }) {
   const visibleParts = useMemo(
     () => parts.filter(p => p.defaultVisible !== false),
     [parts]
@@ -24,36 +27,31 @@ export default function MultiPartModel({ parts, onReady }) {
 
   const paths = useMemo(() => visibleParts.map(p => p.path), [visibleParts])
 
-  // Load all parts at once. useGLTF suspends the component until every path
-  // in the array is ready, then resolves with an GLTF[] in the same order.
   const gltfResult = useGLTF(paths)
   const gltfArray  = Array.isArray(gltfResult) ? gltfResult : [gltfResult]
 
-  // Clone every cached scene. Cloning preserves all transforms encoded in the
-  // GLB (position, rotation, scale at every node level) while keeping the
-  // shared geometry/material resources intact on the original cached scene.
-  // Never mutate gltf.scene directly — the cache hands out the same object
-  // reference on every call, so mutations would compound on the next visit.
   const clones = useMemo(
     () => gltfArray.map(g => g.scene.clone(true)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [gltfResult]
   )
 
-  const groupRef       = useRef()
-  const { invalidate } = useThree()
-  const pendingReadyRef = useRef(false)
-  const onReadyRef      = useRef(onReady)
-  useEffect(() => { onReadyRef.current = onReady }, [onReady])
+  const groupRef              = useRef()
+  const { invalidate }        = useThree()
+  const pendingReadyRef       = useRef(false)
+  const pendingAssemblyReady  = useRef(false)
+  const onReadyRef            = useRef(onReady)
+  const onAssemblyReadyRef    = useRef(onAssemblyReady)
+  useEffect(() => { onReadyRef.current = onReady },            [onReady])
+  useEffect(() => { onAssemblyReadyRef.current = onAssemblyReady }, [onAssemblyReady])
 
+  // ── Normalization ──────────────────────────────────────────────────────────
   useEffect(() => {
-    pendingReadyRef.current = false
+    pendingReadyRef.current      = false
+    pendingAssemblyReady.current = false
     const group = groupRef.current
     if (!group) return
 
-    // Reset the assembly group to identity before measuring.
-    // Individual clone transforms are left untouched — they encode relative
-    // positions and must be preserved for the assembly to appear correct.
     group.position.set(0, 0, 0)
     group.rotation.set(0, 0, 0)
     group.scale.set(1, 1, 1)
@@ -78,13 +76,43 @@ export default function MultiPartModel({ parts, onReady }) {
     group.updateMatrixWorld(true)
 
     invalidate()
-    pendingReadyRef.current = true
+    pendingReadyRef.current      = true
+    pendingAssemblyReady.current = true
   }, [clones, invalidate])
 
+  // ── Opacity isolation ──────────────────────────────────────────────────────
+  // focusPartId === undefined  → prop not provided, skip (keeps default state)
+  // focusPartId === null       → restore all to full opacity
+  // focusPartId === 'aero_0'   → highlight that clone, dim everything else
+  useEffect(() => {
+    if (focusPartId === undefined) return
+    clones.forEach((clone, i) => {
+      const isHighlighted = focusPartId === null || visibleParts[i].id === focusPartId
+      clone.traverse(obj => {
+        if (!obj.isMesh) return
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+        mats.forEach(mat => {
+          mat.transparent = !isHighlighted
+          mat.opacity     = isHighlighted ? 1.0 : 0.10
+          mat.needsUpdate = true
+        })
+      })
+    })
+  }, [focusPartId, clones, visibleParts])
+
+  // ── Per-frame callbacks ────────────────────────────────────────────────────
   useFrame(() => {
+    // Fire onReady + onAssemblyReady one frame after normalization so Three.js
+    // has committed the updated transforms to the scene.
     if (pendingReadyRef.current) {
       pendingReadyRef.current = false
       onReadyRef.current?.()
+    }
+    if (pendingAssemblyReady.current) {
+      pendingAssemblyReady.current = false
+      const cloneMap = {}
+      visibleParts.forEach((p, i) => { cloneMap[p.id] = clones[i] })
+      onAssemblyReadyRef.current?.(cloneMap)
     }
   })
 

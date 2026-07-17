@@ -1,10 +1,11 @@
 import { Suspense, useRef, useEffect } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei'
 import * as THREE from 'three'
 import MultiPartModel from './MultiPartModel.jsx'
 
-const CAMERA_POSITION = [0, 0.5, 4.5]
+const OVERVIEW_POSITION = [0, 0.5, 4.5]
+const OVERVIEW_TARGET   = [0, 0,   0  ]
 
 function ZoomBtn({ label, onPress }) {
   return (
@@ -37,18 +38,95 @@ function ZoomBtn({ label, onPress }) {
 }
 
 /*
+ * CameraRig — lerps camera toward cinemaCamera when set, otherwise returns
+ * to OVERVIEW_POSITION. Disables OrbitControls while animating or in focus.
+ *
+ * props.cinemaCamera — { position: [x,y,z], target: [x,y,z] } | null
+ * props.orbitRef     — ref to the OrbitControls instance
+ */
+function CameraRig({ cinemaCamera, orbitRef }) {
+  const { camera } = useThree()
+  const targetPos    = useRef(new THREE.Vector3(...OVERVIEW_POSITION))
+  const targetLookAt = useRef(new THREE.Vector3(...OVERVIEW_TARGET))
+  const inFocusMode  = useRef(false)
+  const isAnimating  = useRef(false)
+  const isMounted    = useRef(false)
+
+  useEffect(() => {
+    // Skip the initial mount — camera starts at overview, no transition needed.
+    if (!isMounted.current) { isMounted.current = true; return }
+
+    if (cinemaCamera) {
+      inFocusMode.current = true
+      targetPos.current.set(...cinemaCamera.position)
+      targetLookAt.current.set(...cinemaCamera.target)
+    } else {
+      inFocusMode.current = false
+      targetPos.current.set(...OVERVIEW_POSITION)
+      targetLookAt.current.set(...OVERVIEW_TARGET)
+    }
+    isAnimating.current = true
+
+    if (orbitRef.current) {
+      orbitRef.current.enabled    = false
+      orbitRef.current.autoRotate = false
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cinemaCamera])
+
+  useFrame(() => {
+    if (!isAnimating.current) return
+
+    camera.position.lerp(targetPos.current, 0.05)
+    if (orbitRef.current) {
+      orbitRef.current.target.lerp(targetLookAt.current, 0.05)
+      orbitRef.current.update()
+    }
+
+    const posArrived = camera.position.distanceTo(targetPos.current) < 0.008
+    const tgtArrived = !orbitRef.current ||
+      orbitRef.current.target.distanceTo(targetLookAt.current) < 0.008
+
+    if (posArrived && tgtArrived) {
+      camera.position.copy(targetPos.current)
+      if (orbitRef.current) {
+        orbitRef.current.target.copy(targetLookAt.current)
+        orbitRef.current.update()
+        // Re-enable orbit in both directions:
+        // — focus arrival: user can inspect the part freely (no autoRotate)
+        // — overview return: also re-enable autoRotate
+        orbitRef.current.enabled    = true
+        orbitRef.current.autoRotate = !inFocusMode.current
+      }
+      isAnimating.current = false
+    }
+  })
+
+  return null
+}
+
+/*
  * Transparent Canvas for multi-part assemblies.
  * Renders MultiPartModel inside a single Suspense boundary so all parts
  * appear at once after loading — not one by one.
  *
- * props.parts — array of { id, label, path, group, defaultVisible }
- * props.onReady — forwarded to MultiPartModel
+ * props.parts           — array of { id, label, path, group, defaultVisible }
+ * props.onReady         — forwarded to MultiPartModel
+ * props.onAssemblyReady — forwarded to MultiPartModel; called with { [partId]: clone }
+ * props.showEnv         — toggle Studio environment map
+ * props.cinemaCamera    — { position, target } | null; drives CameraRig
+ * props.focusPartId     — forwarded to MultiPartModel for opacity isolation
  */
-export default function MultiPartCanvas({ parts, onReady, showEnv = false }) {
+export default function MultiPartCanvas({
+  parts,
+  onReady,
+  onAssemblyReady,
+  showEnv = false,
+  cinemaCamera = null,
+  focusPartId,
+}) {
   const orbitRef = useRef()
 
-  // Kick off all GLB fetches as soon as this component mounts so the files
-  // are in the browser cache when the inner Suspense resolves.
   useEffect(() => {
     parts
       .filter(p => p.defaultVisible !== false)
@@ -62,7 +140,7 @@ export default function MultiPartCanvas({ parts, onReady, showEnv = false }) {
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas
-        camera={{ position: CAMERA_POSITION, fov: 40 }}
+        camera={{ position: OVERVIEW_POSITION, fov: 40 }}
         style={{ background: 'transparent' }}
         gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
         dpr={[1, 1.5]}
@@ -75,8 +153,15 @@ export default function MultiPartCanvas({ parts, onReady, showEnv = false }) {
 
         {showEnv && <Environment preset="studio" background={false} />}
 
+        <CameraRig cinemaCamera={cinemaCamera} orbitRef={orbitRef} />
+
         <Suspense fallback={null}>
-          <MultiPartModel parts={parts} onReady={onReady} />
+          <MultiPartModel
+            parts={parts}
+            onReady={onReady}
+            onAssemblyReady={onAssemblyReady}
+            focusPartId={focusPartId}
+          />
         </Suspense>
 
         <OrbitControls
@@ -99,16 +184,18 @@ export default function MultiPartCanvas({ parts, onReady, showEnv = false }) {
         pointerEvents: 'none',
       }} />
 
-      {/* Zoom / Reset controls */}
-      <div style={{
-        position: 'absolute', bottom: 28, left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex', gap: 14, zIndex: 10,
-      }}>
-        <ZoomBtn label="−" onPress={handleZoomOut} />
-        <ZoomBtn label="↺" onPress={handleReset} />
-        <ZoomBtn label="+" onPress={handleZoomIn} />
-      </div>
+      {/* Zoom / Reset controls — hidden in cinema mode */}
+      {!cinemaCamera && (
+        <div style={{
+          position: 'absolute', bottom: 28, left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex', gap: 14, zIndex: 10,
+        }}>
+          <ZoomBtn label="−" onPress={handleZoomOut} />
+          <ZoomBtn label="↺" onPress={handleReset} />
+          <ZoomBtn label="+" onPress={handleZoomIn} />
+        </div>
+      )}
     </div>
   )
 }
