@@ -6,9 +6,24 @@ import FashionViewer from './screens/FashionViewer.jsx'
 import AutomotiveViewer from './screens/AutomotiveViewer.jsx'
 import F2008PrototypeViewer from './screens/F2008PrototypeViewer.jsx'
 
+const isDevInspector =
+  window.location.pathname === '/dev/f2008-inspector' ||
+  new URLSearchParams(window.location.search).get('debug') === 'f2008-inspector'
+
 export default function App() {
   const [screen, setScreen] = useState('welcome')
   const [selectedUseCase, setSelectedUseCase] = useState(null)
+
+  if (isDevInspector) {
+    return (
+      <div className="app">
+        <F2008PrototypeViewer
+          useCase={{ id: 'f2008-proto', label: 'F2008 Inspector', emoji: '🔬' }}
+          onBack={() => window.history.back()}
+        />
+      </div>
+    )
+  }
 
   function handleSelectUseCase(uc) {
     setSelectedUseCase(uc)

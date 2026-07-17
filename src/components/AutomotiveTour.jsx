@@ -94,7 +94,8 @@ export default function AutomotiveTour({
       <div style={{
         position: 'absolute', bottom: '8%', left: '50%',
         transform: `translateX(-50%) translateY(${inTour ? '0%' : 'calc(100% + 100px)'})`,
-        transition: 'transform 0.44s cubic-bezier(0.32, 0, 0.14, 1)',
+        opacity: inTour ? 1 : 0,
+        transition: 'transform 0.44s cubic-bezier(0.32, 0, 0.14, 1), opacity 0.28s ease',
         width: 'min(520px, 90vw)', zIndex: 30,
         pointerEvents: inTour ? 'auto' : 'none',
       }}>
@@ -278,8 +279,9 @@ export default function AutomotiveTour({
       <div style={{
         position: 'absolute', bottom: '10%', left: '50%',
         transform: `translateX(-50%) translateY(${inCTA ? '0%' : 'calc(100% + 100px)'})`,
-        transition: 'transform 0.44s cubic-bezier(0.32, 0, 0.14, 1)',
-        width: 'min(480px, 88vw)', zIndex: 30,
+        opacity: inCTA ? 1 : 0,
+        transition: 'transform 0.44s cubic-bezier(0.32, 0, 0.14, 1), opacity 0.28s ease',
+        width: 'min(480px, 88vw)', zIndex: 31,
         pointerEvents: inCTA ? 'auto' : 'none',
       }}>
         <div style={{

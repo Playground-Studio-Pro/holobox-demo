@@ -30,7 +30,7 @@ export default function Menu({ onBack, onSelect }) {
         alignContent: 'center',
         overflowY: 'auto',
       }}>
-        {USE_CASES.map((uc, i) => (
+        {USE_CASES.filter(uc => !uc.debugOnly && uc.visibility !== 'hidden' && uc.type !== 'internal').map((uc, i) => (
           <button
             key={uc.id}
             className="category-card"
